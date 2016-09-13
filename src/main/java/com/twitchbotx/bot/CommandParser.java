@@ -229,6 +229,7 @@ public final class CommandParser {
             return;
         }
         // This functionality will be implemented later, by Raxa.
+        // Feature to handle returning all game totals or elements included with the variable count system.
 //                if (trailing.startsWith("!scoreboard")) {
 //                    if (commandHandler.checkAuthorization("!scoreboard", username, mod, sub)) {
 //                        commandHandler.scoreboard(trailing);

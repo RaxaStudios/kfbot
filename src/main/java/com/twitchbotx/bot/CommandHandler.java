@@ -308,8 +308,8 @@ public final class CommandHandler {
     }
 
     /**
-     * What does this method do?
-     *
+     * Sets status of whether or not a command should automatically run.
+     * Keep separate from cmdInterval to allow for on/off repeat function while keeping interval info.
      * @param msg The message from the user
      */
     public void repeatingCmd(String msg) {
@@ -330,8 +330,8 @@ public final class CommandHandler {
     }
 
     /**
-     * What does this method do?
-     *
+     * Adds delay to commands, helps to offset autocommands 
+     * Useful for autocommands so they don't show up all at once.
      * @param msg The message from the user
      */
     public void cmdDelay(String msg) {
@@ -349,7 +349,7 @@ public final class CommandHandler {
     }
 
     /**
-     * What does this method do?
+     * Sets repeat timer to specified command.
      *
      * @param msg The message from the user
      */
@@ -368,7 +368,7 @@ public final class CommandHandler {
     }
 
     /**
-     * What does this method do?
+     * Appends cooldown to specified command.
      *
      * @param msg The message from the user
      */
@@ -388,7 +388,7 @@ public final class CommandHandler {
     }
 
     /**
-     * This method probably plays a particular sound file for a command.
+     * Appends a sounds file to command node
      *
      * @param msg The message from the user
      */
@@ -494,7 +494,12 @@ public final class CommandHandler {
             sendMessage("Syntax: !command-enable [!command]");
         }
     }
-
+    
+/* This section for adding/removing/setting counts needs to be rearranged.
+ * Configure system to work with objective count names/amounts, not hard-coded   
+ *
+ * return name and value   
+*/
     public void cntAdd(String msg) {
         try {
             String name = getInputParameter("!cnt-add", msg, true);
@@ -592,17 +597,20 @@ public final class CommandHandler {
         }
     }
 
+// Scoreboard needs to be redone to reflect objective based system if possible. 
+// Input from count system to XML file, call all $ amounts using scoreboard class from XML.   
+//    
 //    public void Scoreboard(String msg)
 //    {
 //      String scoreMsg = "";
-//      int ai = 0;
-//      int ud = 0;
-//      int sh = 0;
-//      int re = 0;
-//      Boolean aiDone = Boolean.valueOf(false);
-//      Boolean udDone = Boolean.valueOf(false);
-//      Boolean shDone = Boolean.valueOf(false);
-//      Boolean reDone = Boolean.valueOf(false);
+//      int AI = 0;
+//      int OT = 0;
+//      int SO = 0;
+//      int DS = 0;
+//      Boolean AIDone = Boolean.valueOf(false);
+//      Boolean OTDone = Boolean.valueOf(false);
+//      Boolean SODone = Boolean.valueOf(false);
+//      Boolean DSDone = Boolean.valueOf(false);
 //      int highScore = -1;
 //      int highestScore = 0;
 //      String hsGame = "";
@@ -611,40 +619,40 @@ public final class CommandHandler {
 //        Element xmlNode = (Element)counterNodes.item(i);
 //        switch (xmlNode.getAttribute("name"))
 //        {
-//        case "ai": 
+//        case "AI": 
 //          ai = Integer.parseInt(xmlNode.getTextContent());
 //          break;
-//        case "ud": 
+//        case "OT": 
 //          ud = Integer.parseInt(xmlNode.getTextContent());
 //          break;
-//        case "sh": 
+//        case "SO": 
 //          sh = Integer.parseInt(xmlNode.getTextContent());
 //          break;
-//        case "re": 
+//        case "DS": 
 //          re = Integer.parseInt(xmlNode.getTextContent());
 //        }
 //      }
 //      for (int i = 0; i < 4; i++)
 //      {
-//        if ((!aiDone.booleanValue()) && (ai > highScore))
+//        if ((!AIDone.booleanValue()) && (ai > highScore))
 //        {
-//          highScore = ai;
+//          highScore = AI;
 //          hsGame = "Alien Isolation";
 //        }
 //        if ((!udDone.booleanValue()) && (ud > highScore))
 //        {
-//          highScore = ud;
-//          hsGame = "Until Dawn";
+//          highScore = OT;
+//          hsGame = "Outlast";
 //        }
 //        if ((!shDone.booleanValue()) && (sh > highScore))
 //        {
-//          highScore = sh;
-//          hsGame = "Silent Hill 1";
+//          highScore = SO;
+//          hsGame = "SOMA";
 //        }
 //        if ((!reDone.booleanValue()) && (re > highScore))
 //        {
-//          highScore = re;
-//          hsGame = "Resident Evil 4";
+//          highScore = DS;
+//          hsGame = "Dead Space";
 //        }
 //        if (i == 0)
 //        {
@@ -659,16 +667,16 @@ public final class CommandHandler {
 //        switch (hsGame)
 //        {
 //        case "Alien Isolation": 
-//          aiDone = Boolean.valueOf(true);
+//          AIDone = Boolean.valueOf(true);
 //          break;
-//        case "Until Dawn": 
-//          udDone = Boolean.valueOf(true);
+//        case "Outlast": 
+//          OTDone = Boolean.valueOf(true);
 //          break;
-//        case "Silent Hill 1": 
-//          shDone = Boolean.valueOf(true);
+//        case "SOMA": 
+//          SODone = Boolean.valueOf(true);
 //          break;
-//        case "Resident Evil 4": 
-//          reDone = Boolean.valueOf(true);
+//        case "Dead Space": 
+//          DSDone = Boolean.valueOf(true);
 //        }
 //        highScore = -1;
 //      }
@@ -773,7 +781,7 @@ public final class CommandHandler {
     }
 
     /**
-     * This method plays a sound (When does this ever get used?)
+     * Plays sound file based on attached .wav to certain commands within sound="" in XML. 
      *
      * @param file
      */
