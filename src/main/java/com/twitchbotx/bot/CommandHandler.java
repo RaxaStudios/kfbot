@@ -800,7 +800,7 @@ public final class CommandHandler {
      */
     private void writeXML() {
         try {
-            File configFile = new File("necobot.xml");
+            File configFile = new File("kfbotv1.0.xml");
             TransformerFactory tFactory = TransformerFactory.newInstance();
             Transformer transformer = tFactory.newTransformer();
             DOMSource source = new DOMSource(this.elements.doc);
