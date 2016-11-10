@@ -18,21 +18,27 @@ public final class CommandParser {
     private final PrintStream outstream;
 
     // For handling all youtube link messaging
-    private final YoutubeHandler youtubeHandler = new YoutubeHandler();
+    private final YoutubeHandler youtubeHandler;
+    
+    // Soon to be added for filter options
+    private final ModerationHandler moderationHandler = new ModerationHandler();
     
     // A simple constructor for this class that takes in the XML elements
     // for quick modification
     public CommandParser(final ConfigParser.Elements elements,
             final PrintStream stream) {
         this.commandHandler = new CommandHandler(elements, stream);
-        
         this.outstream = stream;
+        this.youtubeHandler = new YoutubeHandler(elements, stream);
     }
+    
 
     /**
      * This method will start handling all the commands and delegating it to the
-     * proper handlers.
-     *
+     * proper handlers. Uses XML file to determine requirements for commands.
+     * Requirements set by !command-auth
+     * Command enabled/disabled by !command-enable
+     * 
      * @param mod A boolean field which indicates whether this is a mod message.
      *
      * @param sub A boolean field which indicates whether this is a subscriber
@@ -53,72 +59,25 @@ public final class CommandParser {
 
         commandHandler.pyramidDetection(username, trailing);
         youtubeHandler.handleLinkRequest(trailing);
+        moderationHandler.handleTool(trailing);
 
         if (!trailing.startsWith("!")) {
             return;
         }
-        
-//        if (trailing.startsWith("!autohost")) {
-//            if (commandHandler.checkAuthorization("!autohost", username, mod, sub)) {
-//                commandHandler.Autohost(trailing);
-//            }
-//            return;
-//        }
-//        if (trailing.startsWith("!unhost")) {
-//            if (commandHandler.checkAuthorization("!unhost", username, mod, sub)) {
-//                commandHandler.unhost(trailing);
-//            }
-//            return;
-//        }
-//        if (trailing.startsWith("!host-add")) {
-//            if (commandHandler.checkAuthorization("!host-add", username, mod, sub)) {
-//                commandHandler.hostAdd(trailing);
-//            }
-//            return;
-//        }
-//        if (trailing.startsWith("!host-delete")) {
-//            if (commandHandler.checkAuthorization("!host-delete", username, mod, sub)) {
-//                commandHandler.hostDel(trailing);
-//            }
-//            return;
-//        }
-//        if (trailing.startsWith("!host-priority")) {
-//            if (commandHandler.checkAuthorization("!host-priority", username, mod, sub)) {
-//                commandHandler.hostPriority(trailing);
-//            }
-//            return;
-//        }
-//        if (trailing.startsWith("!set-onlineCheckTimer")) {
-//            if (commandHandler.checkAuthorization("!set-onlineCheckTimer", username, mod, sub)) {
-//                commandHandler.setOnlineCheckTimer(trailing);
-//            }
-//            return;
-//        }
-//        if (trailing.startsWith("!set-hostLengthTimer")) {
-//            if (commandHandler.checkAuthorization("!set-hostLengthTimer", username, mod, sub)) {
-//                commandHandler.setHostLengthTimer(trailing);
-//            }
-//            return;
-//        }
-//        if (trailing.startsWith("!set-randomizeHostTarget")) {
-//            if (commandHandler.checkAuthorization("!set-randomizeHostTarget", username, mod, sub)) {
-//                commandHandler.setRandomizeHostTarget(trailing);
-//            }
-//            return;
-//        }
-//        if (trailing.startsWith("!set-cycleHostTarget")) {
-//            if (commandHandler.checkAuthorization("!set-cycleHostTarget", username, mod, sub)) {
-//                commandHandler.setCycleHostTarget(trailing);
-//            }
-//            return;
-//        }
 
         if (trailing.startsWith("!uptime")) {
-            LOGGER.log(Level.INFO, "HELLO: THIS IS FARTBAGXP: {0} {1} {2}", new Object[]{username, mod, sub});
+            LOGGER.log(Level.INFO, "{0} {1} {2}", new Object[]{username, mod, sub});
             if (commandHandler.checkAuthorization("!uptime", username, mod, sub)) {
                 commandHandler.uptime(trailing);
             }
             return;
+        }
+        if (trailing.startsWith("!followage")) {
+            if (commandHandler.checkAuthorization("!followage", username, mod, sub)) {
+                String user = username;
+                commandHandler.followage(user);
+            }
+                
         }
         if (trailing.startsWith("!command-add")) {
             if (commandHandler.checkAuthorization("!command-add", username, mod, sub)) {
@@ -186,6 +145,24 @@ public final class CommandParser {
             }
             return;
         }
+
+    if (trailing.startsWith("!filter-all")) {
+            if (commandHandler.checkAuthorization("!filter-all", username, mod, sub)) {
+                moderationHandler.handleTool(trailing);
+            }
+        }
+        if (trailing.startsWith("!filter-add")) {
+            if (commandHandler.checkAuthorization("!filter-add", username, mod, sub)) {
+                moderationHandler.handleTool(trailing);
+            }
+        }
+        if (trailing.startsWith("!filter-delete")) {
+            if (commandHandler.checkAuthorization("!filter-delete", username, mod, sub)) {
+                moderationHandler.handleTool(trailing);
+            }
+        }
+        
+        
         if (trailing.startsWith("!set-msgCache")) {
             if (commandHandler.checkAuthorization("!set-msgCache", username, mod, sub)) {
                 commandHandler.setMsgCacheSize(trailing);
@@ -225,20 +202,19 @@ public final class CommandParser {
         if (trailing.startsWith("!count")) {
             if (commandHandler.checkAuthorization("!count", username, mod, sub)) {
                 commandHandler.count(trailing);
+                return;
             }
-            return;
         }
-        // This functionality will be implemented later, by Raxa.
-        // Feature to handle returning all game totals or elements included with the variable count system.
-//                if (trailing.startsWith("!scoreboard")) {
-//                    if (commandHandler.checkAuthorization("!scoreboard", username, mod, sub)) {
-//                        commandHandler.scoreboard(trailing);
-//                    }
-//                    return;
-//                }
+
+                if (trailing.startsWith("!scoreboard")) {
+                    if (commandHandler.checkAuthorization("!scoreboard", username, mod, sub)) {
+                        commandHandler.scoreBoard(trailing);
+                    }
+                    return;
+                }
         commandHandler.parseForUserCommands(trailing, username, mod, sub);
     }
-
+        
     /**
      * This method parses all incoming messages from Twitch IRC.
      *
@@ -330,6 +306,7 @@ public final class CommandParser {
             
             // Handle the message
             handleCommand(username, isMod, isSub, msg);
+            
         } catch (Exception e) {
             e.printStackTrace();
             LOGGER.log(Level.WARNING, "Error detected in parsing a message: throwing away message ", e.toString());

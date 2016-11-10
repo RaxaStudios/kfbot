@@ -1,82 +1,119 @@
 package com.twitchbotx.bot;
 
+import java.io.PrintStream;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.logging.Logger;
 import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
+
 
 /**
  * This class is responsible for timer management.
  */
-public final class TimerManagement {
+ 
+public final class TimerManagement{
+
+
+   private final PrintStream outstream;
+   private final ConfigParser.Elements elements;
+    private static final Logger LOGGER = Logger.getLogger(TwitchBotX.class.getSimpleName());
+/*
+** This takes the information parsed in the start of the program under 
+** elements "repeating" and "interval"
+** "repeating" = True commands need to start when the bot starts
+** all commands set to repeat need to start (including created/edited commands)
+*/
+    public TimerManagement(final ConfigParser.Elements elements,
+            final PrintStream stream) {
+        this.elements = elements;
+        this.outstream = stream;
+    }
     
-//    private Timer onlineCheckTimer = new Timer();
-//    private Timer hostLengthTimer = new Timer();
-//    private boolean timeForNewHost = false;
-//    
-//    public void setupPeriodicBroadcast(final NodeList commandNodes) {
-//        for (int i = 0; i < commandNodes.getLength(); i++) {
-//            Element ce = (Element) commandNodes.item(i);
-//            if (Boolean.parseBoolean(ce.getAttribute("repeating")))
-//            {
-//                Long d = Long.parseLong(ce.getAttribute("initialDelay")) * 1000L;
-//                Long l = Long.parseLong(ce.getAttribute("interval")) * 1000L;
-//                if (l < 60000L) {
-//                    System.out.println("Repeating interval too short for command " + ce.getAttribute("name"));
-//                } else {
-//                    // new Timer().schedule(new rTimer(ce.getTextContent(), l), d.longValue());
-//                }
-//            }
-//        }
-//    }
-//    
-//    static class ahTimer
-//      extends TimerTask
-//    {
-//      public void run()
-//      {
-//        com.xtwitchbot.bot.TwitchBotX.onlineCheckTimer.schedule(new ahTimer(), Integer.parseInt(com.xtwitchbot.bot.TwitchBotX.configNode.getElementsByTagName("onlineCheckTimer").item(0).getTextContent()) * 1000);
-//        try
-//        {
-//          if (!com.xtwitchbot.bot.TwitchBotX.CheckIfLive(com.xtwitchbot.bot.TwitchBotX.currentHostTarget).booleanValue()) {
-//            // XTwitchBot.access$400();
-//          }
-//        }
-//        catch (Exception e)
-//        {
-//          com.xtwitchbot.bot.TwitchBotX.LogError(e.toString());
-//        }
-//      }
-//    }
-//
-//    static class hlTimer
-//      extends TimerTask
-//    {
-//      public void run()
-//      {
-//        com.xtwitchbot.bot.TwitchBotX.hostLengthTimer.schedule(new hlTimer(), Integer.parseInt(com.xtwitchbot.bot.TwitchBotX.configNode.getElementsByTagName("hostLengthTimer").item(0).getTextContent()) * 1000);
-//        if (Boolean.parseBoolean(com.xtwitchbot.bot.TwitchBotX.configNode.getElementsByTagName("cycleTargets").item(0).getTextContent())) {
-//          // XTwitchBot.access$400();
-//        }
-//      }
-//    }
-//
-//    static class rTimer
-//      extends TimerTask
-//    {
-//      String message;
-//      long repeatingTimer;
-//
-//      public rTimer(String msg, long timer)
-//      {
-//        this.message = msg;
-//        this.repeatingTimer = timer;
-//      }
-//
-//      public void run()
-//      {
-//        new Timer().schedule(new rTimer(this.message, this.repeatingTimer), this.repeatingTimer);
-//        com.xtwitchbot.bot.TwitchBotX.SendMessage(this.message);
-//      }
-//    }
+
+
+    public void setupPeriodicBroadcast(final ConfigParser.Elements repeating) {
+
+            ConfigParser.Elements ce = (ConfigParser.Elements) repeating;
+            for(int i = 0; i < elements.commandNodes.getLength(); i++){
+                Element ca = (Element) ce.commandNodes.item(i);
+
+                if(Boolean.parseBoolean(ca.getAttribute("repeating"))){
+                    long d = Long.parseLong(ca.getAttribute("initialDelay")) * 1000L;
+                    Long l = Long.parseLong(ca.getAttribute("interval")) * 1000L;
+                    if ( l < 60000L) {
+                        System.out.println("Repeating interval too short for command " + ca.getAttribute("name"));
+                    }
+                    else {
+                        new Timer().schedule(new rTimer(ca.getTextContent(), l), d);
+                        
+                    }
+                }
+            }
+    }
+
+    
+    static class rTimer
+      extends TimerTask implements Runnable
+    {
+        
+      String message;
+      long repeatingTimer;
+      
+      public rTimer(String msg, long timer)
+      {
+        this.message = msg;
+        this.repeatingTimer = timer;
+      }
+      @Override
+      public void run()
+      {
+        new Timer().schedule(new rTimer(this.message, this.repeatingTimer), this.repeatingTimer);
+        /*sendTimer sendMessage = new sendTimer(this.message);
+        sendMessage.run();*/
+        /*sendMessage(this.message);*/
+
+        System.out.println("Starting repeating commands" + this.message);
+      }
+    }
+
+    /**
+     * This command will send a message out to a specific Twitch channel.
+     *
+     * It will also wrap the message in pretty text (> /me) before sending it
+     * out.
+     *
+     * @param msg The message to be sent out to the channel
+     */
+static class sendTimer implements Runnable{
+    private final PrintStream outstream;
+   private final ConfigParser.Elements elements;
+    String msg1;
+    public sendTimer(String message1) {
+        this.msg1 = message1;
+        this.outstream = null;
+        this.elements = null;
+    }
+   private void sendMessage(final String msg) {
+        final String message = "/me > " + msg;
+        this.outstream.println("PRIVMSG #"
+                + this.elements.configNode.getElementsByTagName("myChannel").item(0).getTextContent()
+                + " "
+                + ":"
+                + message);
+    }
+   public void run() {
+
+       
+   }
 }
+private void sendMessage(final String msg) {
+        final String message = "/me > " + msg;
+        this.outstream.println("PRIVMSG #"
+                + this.elements.configNode.getElementsByTagName("myChannel").item(0).getTextContent()
+                + " "
+                + ":"
+                + message);
+    }
+}
+
+

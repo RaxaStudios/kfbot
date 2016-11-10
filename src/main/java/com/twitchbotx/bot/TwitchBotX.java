@@ -73,6 +73,21 @@ public final class TwitchBotX {
         }
     }
     
+    /*
+    ** This will start the repeating commands based on what is found in XML
+    **
+    */
+    
+    public void startTimers(final Elements elements) {
+        final TimerManagement timers = new TimerManagement(elements, out);
+        timers.setupPeriodicBroadcast(elements);
+    }
+    
+    
+    
+    
+    
+    
     /**
      * This method will start a sequence of events for starting the bot.
      * 1) Load and Read the configuration file.
@@ -80,6 +95,7 @@ public final class TwitchBotX {
      * 3) Start all periodic timers for broadcasting (if there are any)
      * 4) Start a blocking read on the socket for incoming message
      */
+
     public void start() {
         try
         {
@@ -114,7 +130,7 @@ public final class TwitchBotX {
             LOGGER.info("Bot is now ready for service.");
             
             // start all periodic timers for broadcasting events
-            
+            startTimers(elements);
             
             // start doing a blocking read on the socket
             beginReadingMessages(elements);

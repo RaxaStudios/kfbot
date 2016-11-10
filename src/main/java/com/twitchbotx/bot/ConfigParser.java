@@ -17,6 +17,7 @@ import java.util.logging.Logger;
 public final class ConfigParser {
 
     private final static Logger LOGGER = Logger.getLogger(ConfigParser.class.getSimpleName());
+    private TimerManagement timerManagement;
 
     /**
      * An inner class that holds all the positions of all the elements.
@@ -26,17 +27,16 @@ public final class ConfigParser {
 
         public Element configNode;
 
-        public Element autohostTargets;
-
         public Element commands;
 
         public Element counters;
 
-        public NodeList hostTargetNodes;
-
         public NodeList commandNodes;
 
         public NodeList counterNodes;
+        
+
+
     }
 
     /**
@@ -47,6 +47,8 @@ public final class ConfigParser {
     public final class Configuration {
 
         public String account;
+        
+        public String clientID;
 
         public String password;
 
@@ -63,6 +65,7 @@ public final class ConfigParser {
                     + ", password=" + password
                     + ", joinedChannel=" + joinedChannel
                     + ", host=" + host
+                    + ", clientID=" + clientID
                     + ", port=" + port + '}';
         }
     }
@@ -91,6 +94,9 @@ public final class ConfigParser {
 
         configuration.port
                 = Integer.parseInt(configNode.getElementsByTagName("ircPort").item(0).getTextContent());
+        
+        configuration.clientID
+                = configNode.getElementsByTagName("botClientID").item(0).getTextContent();
 
         return configuration;
     }
@@ -134,15 +140,11 @@ public final class ConfigParser {
 
         elements.configNode
                 = (Element) elements.doc.getElementsByTagName("config").item(0);
-        final Element autohostNode = (Element) elements.doc.getElementsByTagName("autohost").item(0);
-        elements.autohostTargets = (Element) autohostNode.getElementsByTagName("hostTargets").item(0);
-        elements.hostTargetNodes = elements.autohostTargets.getElementsByTagName("hostTarget");
 
         elements.commands = (Element) elements.doc.getElementsByTagName("commands").item(0);
         elements.commandNodes = elements.commands.getElementsByTagName("command");
         elements.counters = (Element) elements.doc.getElementsByTagName("counters").item(0);
         elements.counterNodes = elements.counters.getElementsByTagName("counter");
-
         return elements;
     }
 }

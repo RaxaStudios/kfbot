@@ -3,7 +3,9 @@ package com.twitchbotx.bot;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.PrintStream;
 import java.net.URL;
+import java.net.URLConnection;
 import java.util.logging.Logger;
 
 /**
@@ -14,55 +16,48 @@ import java.util.logging.Logger;
  */
 public final class YoutubeHandler {
     
+    private final PrintStream outstream;
     private static final Logger LOGGER = Logger.getLogger(YoutubeHandler.class.getSimpleName());
+    private final ConfigParser.Elements elements;
 
+    
+    public YoutubeHandler(final ConfigParser.Elements elements,
+            final PrintStream stream) {
+            this.elements = elements;
+            this.outstream = stream;
+            }
+    
     /**
-     * This method will get the youtube video ID from a given URL link to a 
-     * youtube resource.
-     * 
-     * @param url
-     * The URL of the resource link 
-     * 
-     * @return 
-     * A Youtube video ID
-     */
-    private String getYoutubeVideoID(final String url) {
-        if (url.contains("youtube")) {
-            return url.substring(url.lastIndexOf("=") + 1);
-        }
-        if (url.contains("youtu.be")) {
-            return url.substring(url.lastIndexOf("/") + 1);
-        }
-        return "";
-    }
-
-    /**
-     * This method will get the youtube title given a URL link to the youtube
-     * resource.
+     * This method sets youtube URL, reads, and sends out title
      * 
      * @param url 
-     * The URL of the youtube resource
+     * 
      */
-    private void getYoutubeTitle(final URL url) {
-        String startTag = "&title=";
-        int startTagLength = startTag.length();
-
-        int startIndex = 0;
-        int endIndex = 0;
+    private void getYoutubeTitle(String request) {
         try {
-            BufferedReader bufReader = new BufferedReader(new InputStreamReader(url.openStream()));
-            String line = bufReader.readLine();
-            startIndex = line.indexOf(startTag);
-            endIndex = line.indexOf("&", startIndex + startTagLength);
-            String title = line.substring(startIndex + startTagLength, endIndex);
+            String ytAPI = this.elements.configNode.getElementsByTagName("youtubeTitle").item(0).getTextContent();
+            ytAPI = ytAPI.replaceAll("#id", "&id=" + request);
+            ytAPI = ytAPI.replaceAll("#key", "&key=" + this.elements.configNode.getElementsByTagName("youtubeAPI").item(0).getTextContent());
+            URL url = new URL(ytAPI);
+            URLConnection con = (URLConnection) url.openConnection();
+            System.out.println(con);
+            BufferedReader bufReader = new BufferedReader(new InputStreamReader(con.getInputStream()));
+            String line;
+            StringBuilder response = new StringBuilder();
+            while ((line = bufReader.readLine()) != null) {
+                response.append(line);
+            }
             bufReader.close();
-
-            title = youtubeDescToPlainText(title);
-            if (title.length() > 0) {
-                LOGGER.info("Sending youtube title: " + title);
-                // SendMessage(title);
-            } else {
-                System.out.println("No title found in document.");
+            if (response.toString().contains("\"items\": []")) {
+                sendMessage("Video not found.");
+            } 
+            else {
+                int bi = response.toString().indexOf("\"title\":") + 10;
+                int ei = response.toString().indexOf(",", bi) - 1;
+                String s = response.toString().substring(bi, ei); 
+                if (s.length() > 0) {
+                sendMessage(s);
+                } 
             }
         } catch (IOException e) {
             System.out.println("GetTitle.GetTitle - error opening or reading URL: " + e);
@@ -70,67 +65,61 @@ public final class YoutubeHandler {
     }
 
     /**
-     * This method will translate the youtube description into plain text.
-     * 
-     * @param input
-     * Youtube description
-     * 
-     * @return 
-     * Plain text of the youtube description
-     */
-    private String youtubeDescToPlainText(final String input) {
-        String output = "";
-        int escapeSequence = 0;
-        for (int i = 0; i < input.length(); i++) {
-            char c = input.charAt(i);
-            if (escapeSequence > 0) {
-                escapeSequence--;
-            } else if (c == '+') {
-                output = output + " ";
-            } else if (c == '%') {
-                escapeSequence = 2;
-            } else {
-                output = output + c;
-            }
-        }
-        return output;
-    }
-    
-    /**
-     * This method will translate a provided link and describe the youtube 
-     * video given.
+     * This method searches all messages in stream for youtube links 
+     * Sends ID to getYoutubeTitle method 
+     * This method requires 11 character video ID
      * 
      * @param msg 
      * A full message from Twitch IRC API from a particular user
      */
+    
     public void handleLinkRequest(final String msg) {
-        int startToken = 0;
-        int endToken = -1;
-        int msgLength = msg.length();
-        String token = "";
+
         for (;;) {
             try {
-                startToken = endToken + 1;
-                if (endToken >= msgLength - 1) {
+                
+                if(msg.contains("youtube.com")){
+                    
+                    int startToken = msg.indexOf("youtube.com") + 20;
+                    int endToken = msg.indexOf("v=") + 13;
+                    String ytId = msg.substring(startToken, endToken);
+                    getYoutubeTitle(ytId);
+                }else if(msg.contains("youtu.be")){
+                    
+                    int startToken = msg.indexOf("youtu.be") + 9;
+                    int endToken = msg.indexOf("/") + 1;
+                    String ytId = msg.substring(startToken, endToken);
+                    System.out.println(ytId);
+                    getYoutubeTitle(ytId);
+                }else {
                     return;
                 }
-                endToken = msg.indexOf(" ", startToken);
-                if (endToken == -1) {
-                    endToken = msgLength;
-                }
-                token = msg.substring(startToken, endToken);
-                if ((token.startsWith("http://")) || (token.startsWith("https://"))) {
-                    if ((token.contains("youtube")) || (token.contains("youtu.be"))) {
-                        getYoutubeTitle(new URL("http://youtube.com/get_video_info?video_id=" + getYoutubeVideoID(token)));
-                        return;
-                    }
-                }
+                return;
+               
             } catch (Exception e) {
                 LOGGER.severe(e.toString());
+                return;
+                
             } finally {
             }
         }
     }
 
+    /**
+     * This command will send a message out to a specific Twitch channel.
+     *
+     * It will also wrap the message in pretty text (> /me) before sending it
+     * out.
+     *
+     * @param msg The message to be sent out to the channel
+     */
+    private void sendMessage(final String msg) {
+        final String message = "/me > " + msg;
+        this.outstream.println("PRIVMSG #"
+                + this.elements.configNode.getElementsByTagName("myChannel").item(0).getTextContent()
+                + " "
+                + ":"
+                + message);
+    }
 
 }
