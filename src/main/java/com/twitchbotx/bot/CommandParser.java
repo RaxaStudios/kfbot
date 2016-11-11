@@ -13,16 +13,16 @@ public final class CommandParser {
 
     // For handling all normal commands
     private final CommandHandler commandHandler;
-    
+
     // A stream for communicating to twitch chat through IRC
     private final PrintStream outstream;
 
     // For handling all youtube link messaging
     private final YoutubeHandler youtubeHandler;
-    
+
     // Soon to be added for filter options
     private final ModerationHandler moderationHandler = new ModerationHandler();
-    
+
     // A simple constructor for this class that takes in the XML elements
     // for quick modification
     public CommandParser(final ConfigParser.Elements elements,
@@ -31,14 +31,13 @@ public final class CommandParser {
         this.outstream = stream;
         this.youtubeHandler = new YoutubeHandler(elements, stream);
     }
-    
 
     /**
      * This method will start handling all the commands and delegating it to the
      * proper handlers. Uses XML file to determine requirements for commands.
-     * Requirements set by !command-auth
-     * Command enabled/disabled by !command-enable
-     * 
+     * Requirements set by !command-auth Command enabled/disabled by
+     * !command-enable
+     *
      * @param mod A boolean field which indicates whether this is a mod message.
      *
      * @param sub A boolean field which indicates whether this is a subscriber
@@ -52,7 +51,7 @@ public final class CommandParser {
      * @param prefix A prefix for positioning where the username might reside
      */
     private void handleCommand(
-            final String username, 
+            final String username,
             final boolean mod,
             final boolean sub,
             final String trailing) {
@@ -77,7 +76,7 @@ public final class CommandParser {
                 String user = username;
                 commandHandler.followage(user);
             }
-                
+
         }
         if (trailing.startsWith("!command-add")) {
             if (commandHandler.checkAuthorization("!command-add", username, mod, sub)) {
@@ -146,7 +145,7 @@ public final class CommandParser {
             return;
         }
 
-    if (trailing.startsWith("!filter-all")) {
+        if (trailing.startsWith("!filter-all")) {
             if (commandHandler.checkAuthorization("!filter-all", username, mod, sub)) {
                 moderationHandler.handleTool(trailing);
             }
@@ -161,8 +160,7 @@ public final class CommandParser {
                 moderationHandler.handleTool(trailing);
             }
         }
-        
-        
+
         if (trailing.startsWith("!set-msgCache")) {
             if (commandHandler.checkAuthorization("!set-msgCache", username, mod, sub)) {
                 commandHandler.setMsgCacheSize(trailing);
@@ -206,15 +204,15 @@ public final class CommandParser {
             }
         }
 
-                if (trailing.startsWith("!scoreboard")) {
-                    if (commandHandler.checkAuthorization("!scoreboard", username, mod, sub)) {
-                        commandHandler.scoreBoard(trailing);
-                    }
-                    return;
-                }
+        if (trailing.startsWith("!scoreboard")) {
+            if (commandHandler.checkAuthorization("!scoreboard", username, mod, sub)) {
+                commandHandler.scoreBoard(trailing);
+            }
+            return;
+        }
         commandHandler.parseForUserCommands(trailing, username, mod, sub);
     }
-        
+
     /**
      * This method parses all incoming messages from Twitch IRC.
      *
@@ -240,73 +238,72 @@ public final class CommandParser {
             boolean isMod = false;
             boolean isSub = false;
             String username = "";
-            
+
             // This is a message from a user.
-            
             // If it's the broadcaster, he/she is a mod.
             LOGGER.info(msg);
-            if(msg.startsWith("@badges=broadcaster/1")) {
+            if (msg.startsWith("@badges=broadcaster/1")) {
                 isMod = true;
             }
-  
+
             // Find the mod indication
             final int modPosition = msg.indexOf("mod=") + 4;
-            if("1".equals(msg.substring(modPosition, modPosition + 1))) {
+            if ("1".equals(msg.substring(modPosition, modPosition + 1))) {
                 isMod = true;
             }
-            
+
             // Find the subscriber indication
             final int subPosition = msg.indexOf("subscriber=") + 11;
-            if("1".equals(msg.substring(subPosition, subPosition + 1))) {
+            if ("1".equals(msg.substring(subPosition, subPosition + 1))) {
                 isSub = true;
             }
-            
+
             // Find the username
             final int usernamePosition = msg.indexOf("display-name=") + 13;
             final int usernameStopPosition = msg.indexOf(";", usernamePosition);
-            if(usernamePosition != -1 && usernameStopPosition != -1) {
+            if (usernamePosition != -1 && usernameStopPosition != -1) {
                 username = msg.substring(usernamePosition, usernameStopPosition);
             }
-            
+
             // Split the message into pieces to find the real message
             final int msgPosition = msg.indexOf("user-type=");
-            
+
             // No message to be processed
-            if(msgPosition == -1) {
+            if (msgPosition == -1) {
                 return;
             }
             msg = msg.substring(msgPosition);
-            
+
             // Find the # for the channel, so we can figured out what type
             // of message this is.
             final int channelPosition = msg.indexOf("#");
-            if(msgPosition == -1) {
+            if (msgPosition == -1) {
                 return;
             }
-            
+
             // Ensure we can find "PRIVMSG" as an indication that this is a
             // user message, make sure we only search a limited bound, because
             // somebody can potentially fake a mod by including "PRIVMSG" 
             // in their message
             final String hasPrivMsg = msg.substring(0, channelPosition);
             final int privMsgIndex = hasPrivMsg.indexOf("PRIVMSG");
-            if(privMsgIndex == -1) {
+            if (privMsgIndex == -1) {
                 return;
             }
-            
+
             // Capture the raw message, and find the message used
             final int msgIndex = msg.indexOf(":", channelPosition);
-            
+
             // No message found, return immediately
-            if(msgIndex == -1) {
+            if (msgIndex == -1) {
                 return;
             }
-            
-            msg = msg.substring(msgIndex+1);
-            
+
+            msg = msg.substring(msgIndex + 1);
+
             // Handle the message
             handleCommand(username, isMod, isSub, msg);
-            
+
         } catch (Exception e) {
             e.printStackTrace();
             LOGGER.log(Level.WARNING, "Error detected in parsing a message: throwing away message ", e.toString());

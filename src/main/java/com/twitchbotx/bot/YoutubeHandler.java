@@ -10,28 +10,27 @@ import java.util.logging.Logger;
 
 /**
  * This class handles all the youtube based queries from Twitch chat.
- * 
- * It will essentially query youtube, and get the ID and information about
- * the video back.
+ *
+ * It will essentially query youtube, and get the ID and information about the
+ * video back.
  */
 public final class YoutubeHandler {
-    
+
     private final PrintStream outstream;
     private static final Logger LOGGER = Logger.getLogger(YoutubeHandler.class.getSimpleName());
     private final ConfigParser.Elements elements;
 
-    
     public YoutubeHandler(final ConfigParser.Elements elements,
             final PrintStream stream) {
-            this.elements = elements;
-            this.outstream = stream;
-            }
-    
+        this.elements = elements;
+        this.outstream = stream;
+    }
+
     /**
      * This method sets youtube URL, reads, and sends out title
-     * 
-     * @param url 
-     * 
+     *
+     * @param url
+     *
      */
     private void getYoutubeTitle(String request) {
         try {
@@ -50,14 +49,13 @@ public final class YoutubeHandler {
             bufReader.close();
             if (response.toString().contains("\"items\": []")) {
                 sendMessage("Video not found.");
-            } 
-            else {
+            } else {
                 int bi = response.toString().indexOf("\"title\":") + 10;
                 int ei = response.toString().indexOf(",", bi) - 1;
-                String s = response.toString().substring(bi, ei); 
+                String s = response.toString().substring(bi, ei);
                 if (s.length() > 0) {
-                sendMessage(s);
-                } 
+                    sendMessage(s);
+                }
             }
         } catch (IOException e) {
             System.out.println("GetTitle.GetTitle - error opening or reading URL: " + e);
@@ -65,41 +63,38 @@ public final class YoutubeHandler {
     }
 
     /**
-     * This method searches all messages in stream for youtube links 
-     * Sends ID to getYoutubeTitle method 
-     * This method requires 11 character video ID
-     * 
-     * @param msg 
-     * A full message from Twitch IRC API from a particular user
+     * This method searches all messages in stream for youtube links Sends ID to
+     * getYoutubeTitle method This method requires 11 character video ID
+     *
+     * @param msg A full message from Twitch IRC API from a particular user
      */
-    
     public void handleLinkRequest(final String msg) {
 
         for (;;) {
             try {
-                
-                if(msg.contains("youtube.com")){
-                    
+
+                if (msg.contains("youtube.com")) {
+
                     int startToken = msg.indexOf("youtube.com") + 20;
                     int endToken = msg.indexOf("v=") + 13;
                     String ytId = msg.substring(startToken, endToken);
                     getYoutubeTitle(ytId);
-                }else if(msg.contains("youtu.be")){
-                    
+                } else if (msg.contains("youtu.be")) {
+
                     int startToken = msg.indexOf("youtu.be") + 9;
                     int endToken = msg.indexOf("/") + 1;
                     String ytId = msg.substring(startToken, endToken);
                     System.out.println(ytId);
                     getYoutubeTitle(ytId);
-                }else {
+                } else {
                     return;
                 }
                 return;
-               
+
             } catch (Exception e) {
                 LOGGER.severe(e.toString());
                 return;
-                
+
             } finally {
             }
         }

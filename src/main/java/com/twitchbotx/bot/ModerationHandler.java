@@ -10,11 +10,12 @@ package com.twitchbotx.bot;
  * @author RaxaStudios
  */
 public class ModerationHandler {
-    
-    public void commandSwitch(String trailing){
+
+    public void commandSwitch(String trailing) {
     }
-    public void handleTool(String msg){
-    System.out.println(msg);
-    
-}
+
+    public void handleTool(String msg) {
+        System.out.println(msg);
+
+    }
 }

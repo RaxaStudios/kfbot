@@ -30,16 +30,18 @@ import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.Timer;
 import java.util.TimerTask;
+
 /**
  * This class is a command handler for most of the common commands in this bot.
  */
-public final class CommandHandler {        
-        /*
+public final class CommandHandler {
+
+    /*
         ** If command = !filter-all & username is valid & mod requirement is met per XML & sub requirement is met per XML
         ** Then create a moderationHandler and send "trailing" to the handleTool method
         ** filter, command, set broadcaster only
         ** See XML for other requirements
-        */
+     */
 
     private static final Logger LOGGER = Logger.getLogger(TwitchBotX.class.getSimpleName());
 
@@ -50,7 +52,6 @@ public final class CommandHandler {
     private final List<CachedMessage> recentMessages = new ArrayList<>();
 
     private String[] reservedCommands = {
-
         "!uptime",
         "!followage",
         "!command-add",
@@ -74,8 +75,7 @@ public final class CommandHandler {
         "count",
         "!filter-all",
         "!filter-add",
-        "!filter-delete",
-    };
+        "!filter-delete",};
 
     /**
      * A simple inner class for storing cached messages.
@@ -178,7 +178,6 @@ public final class CommandHandler {
         }
     }
 
-   
     /**
      * This method will add a new command to the bot.
      *
@@ -316,8 +315,10 @@ public final class CommandHandler {
     }
 
     /**
-     * Sets status of whether or not a command should automatically run.
-     * Keep separate from cmdInterval to allow for on/off repeat function while keeping interval info.
+     * Sets status of whether or not a command should automatically run. Keep
+     * separate from cmdInterval to allow for on/off repeat function while
+     * keeping interval info.
+     *
      * @param msg The message from the user
      */
     public void repeatingCmd(String msg) {
@@ -332,7 +333,7 @@ public final class CommandHandler {
             if (setUserCmdXMLParam(cmd, "repeating", repeat, false)) {
                 /*
                 ** TODO: Send changes to XML, need to add catch to start timer with TimerManagement class
-                */
+                 */
                 sendMessage("Command [" + cmd + "] repeating set to [" + repeat + "]");
             }
         } catch (IllegalArgumentException e) {
@@ -341,8 +342,9 @@ public final class CommandHandler {
     }
 
     /**
-     * Adds delay to commands, helps to offset autocommands 
-     * Useful for autocommands so they don't show up all at once.
+     * Adds delay to commands, helps to offset autocommands Useful for
+     * autocommands so they don't show up all at once.
+     *
      * @param msg The message from the user
      */
     public void cmdDelay(String msg) {
@@ -419,58 +421,16 @@ public final class CommandHandler {
             sendMessage("Syntax: !command-sound [!command] [filename.wav]");
         }
     }
-/*
+
+    /*
 ** This creates the URL = api.twitch.tv/kraken with desired streamer name("myChannel") from kfbot1.0.xml
 ** Opens a connection, begins reading using BufferedReader brin, builds a String response based on API reply
 ** Once response is done building, checks for "stream\:null" response - this means stream is not live
 ** Creates Strings to hold content placed between int "bi" and int "ei" as per their defined index
 ** 
-*/
-    
+     */
+
     public void uptime(String msg) {
-        
-        /*
-        ** Cooldown for uptime command
-        ** 
-        */
-        /*Boolean upCooldown = false;
-        if(!upCooldown){
-            sendMessage("Nope");
-        }
-        else {
-            sendMessage("Yep");
-        }
-        
-      
-       
-        ConfigParser.Elements uptime = (ConfigParser.Elements) this.elements;
-        for(int i = 0; i < elements.commandNodes.getLength(); i++){
-        Element coolDown = (Element) uptime.commandNodes.item(i);
-        
-        System.out.println(coolDown);
-        }
-        Calendar calendar = Calendar.getInstance();
-        Date now = calendar.getTime();
-        Date cdTime = new Date();
-        
-        if (cdTime.before(coolDown)){
-            return;
-        }
-        else  {
-            Date coolDown = new Date(now.getTime() + Long.parseLong("30") * 1000L);
-        }
-        if (!this.elements.commands.getAttribute("cdUntil").isEmpty()) {
-                            cdTime = new Date(Long.parseLong(this.elements.commands.getAttribute("cdUntil")));
-                        }
-        if(now.before(cdTime)){
-            return;
-        }
-        cdTime = new Date(now.getTime() + Long.parseLong(this.elements.commands.getAttribute("cooldown")) * 1000L);
-        this.elements.commands.setAttribute("cdUntil", Long.toString(cdTime.getTime()));
-        */
-        
-        
-        
         try {
             String statusURL = this.elements.configNode.getElementsByTagName("twitchStreamerStatus").item(0).getTextContent();
             statusURL = statusURL.replaceAll("#streamer", this.elements.configNode.getElementsByTagName("myChannel").item(0).getTextContent());
@@ -478,7 +438,7 @@ public final class CommandHandler {
             URLConnection con = (URLConnection) url.openConnection();
             con.setRequestProperty("Accept", "application/vnd.twitchtv.v3+json");
             con.setRequestProperty("Authorization", this.elements.configNode.getElementsByTagName("botOAUTH").item(0).getTextContent());
-            con.setRequestProperty("Client-ID", this.elements.configNode.getElementsByTagName("botClientID").item(0).getTextContent());   
+            con.setRequestProperty("Client-ID", this.elements.configNode.getElementsByTagName("botClientID").item(0).getTextContent());
             BufferedReader brin = new BufferedReader(new InputStreamReader(con.getInputStream()));
             StringBuilder response = new StringBuilder();
             String inputLine;
@@ -488,21 +448,20 @@ public final class CommandHandler {
             brin.close();
             if (response.toString().contains("\"stream\":null")) {
                 sendMessage("Stream is not currently live.");
-            } 
-            else {
+            } else {
                 int bi = response.toString().indexOf("\"created_at\":") + 14;
                 int ei = response.toString().indexOf("\",", bi);
                 String s = response.toString().substring(bi, ei);
                 Instant start = Instant.parse(s);
                 Instant current = Instant.now();
-                long gap = ChronoUnit.MILLIS.between(start,current);
+                long gap = ChronoUnit.MILLIS.between(start, current);
                 String upT = String.format("%d hours, %d minutes, %d seconds", new Object[]{
                     TimeUnit.MILLISECONDS.toHours(gap),
                     TimeUnit.MILLISECONDS.toMinutes(gap) - TimeUnit.HOURS.toMinutes(TimeUnit.MILLISECONDS.toHours(gap)),
                     TimeUnit.MILLISECONDS.toSeconds(gap) - TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(gap))
                 });
                 sendMessage("Stream has been up for " + upT + ".");
-                
+
             }
         } catch (Exception e) {
             LOGGER.severe(e.toString());
@@ -514,53 +473,52 @@ public final class CommandHandler {
             ;
         }*/
     }
-/*
+
+    /*
 ** This delivers the original follow date 
 **
 ** @param user
 ** @return formated date of created_at per https://api.twitch.tv/kraken/users/test_user1/follows/channels/test_channel
 **
-*/
-    
+     */
+
     public void followage(String user) {
-    try {
-        String followURL = this.elements.configNode.getElementsByTagName("twitchFollowage").item(0).getTextContent();
-        followURL = followURL.replaceAll("#user", user);
-        followURL = followURL.replaceAll("#streamer", this.elements.configNode.getElementsByTagName("myChannel").item(0).getTextContent());
-        URL url = new URL(followURL);
-        URLConnection con = (URLConnection) url.openConnection();
-        con.setRequestProperty("Accept", "application/vnd.twitchtv.v3+json");
-        con.setRequestProperty("Authorization", this.elements.configNode.getElementsByTagName("botOAUTH").item(0).getTextContent());
-        con.setRequestProperty("Client-ID", this.elements.configNode.getElementsByTagName("botClientID").item(0).getTextContent());   
-        BufferedReader brin = new BufferedReader(new InputStreamReader(con.getInputStream()));
-        StringBuilder response = new StringBuilder();
-        String inputLine;
-        while ((inputLine = brin.readLine()) != null) {
-            response.append(inputLine);
-            System.out.println(inputLine);
-        }
-        brin.close();
-        if (response.toString().contains("404")) {
+        try {
+            String followURL = this.elements.configNode.getElementsByTagName("twitchFollowage").item(0).getTextContent();
+            followURL = followURL.replaceAll("#user", user);
+            followURL = followURL.replaceAll("#streamer", this.elements.configNode.getElementsByTagName("myChannel").item(0).getTextContent());
+            URL url = new URL(followURL);
+            URLConnection con = (URLConnection) url.openConnection();
+            con.setRequestProperty("Accept", "application/vnd.twitchtv.v3+json");
+            con.setRequestProperty("Authorization", this.elements.configNode.getElementsByTagName("botOAUTH").item(0).getTextContent());
+            con.setRequestProperty("Client-ID", this.elements.configNode.getElementsByTagName("botClientID").item(0).getTextContent());
+            BufferedReader brin = new BufferedReader(new InputStreamReader(con.getInputStream()));
+            StringBuilder response = new StringBuilder();
+            String inputLine;
+            while ((inputLine = brin.readLine()) != null) {
+                response.append(inputLine);
+                System.out.println(inputLine);
+            }
+            brin.close();
+            if (response.toString().contains("404")) {
                 ;
-            } 
-            else {
+            } else {
                 int bi = response.toString().indexOf("\"created_at\":") + 14;
                 int ei = response.toString().indexOf("T", bi);
-                
+
                 String s = response.toString().substring(bi, ei);
                 System.out.println(s);
                 DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
                 LocalDate begin = LocalDate.parse(s, formatter);
                 LocalDate today = LocalDate.now();
-                long gap = ChronoUnit.DAYS.between(begin,today);
+                long gap = ChronoUnit.DAYS.between(begin, today);
                 sendMessage(user + " has been following for " + gap + " days. Starting on " + begin + ".");
             }
-    }catch (Exception e){
-        LOGGER.severe(e.toString());
+        } catch (Exception e) {
+            LOGGER.severe(e.toString());
         }
     }
-   
-    
+
     public void setMsgCacheSize(String msg) {
         try {
             String value = getInputParameter("!set-msgCache", msg, true);
@@ -610,12 +568,12 @@ public final class CommandHandler {
             sendMessage("Syntax: !command-enable [!command]");
         }
     }
-    
-/* This section for adding/removing/setting counts needs to be rearranged.
+
+    /* This section for adding/removing/setting counts needs to be rearranged.
  * Configure system to work with objective count names/amounts, not hard-coded   
  *
  * return name and value   
-*/
+     */
     public void cntAdd(String msg) {
         try {
             String name = getInputParameter("!cnt-add", msg, true);
@@ -712,19 +670,19 @@ public final class CommandHandler {
             sendMessage("Syntax: !count [name] [value]");
         }
     }
-   /*
+
+    /*
     Need to rework to function as a call for all current counters with totals
     Add/Delete via commands, data stored in XML
-    */
-    
-    public void scoreBoard(String msg)
-    {
-      String scoreMsg = "";
+     */
 
-      int highScore = -1;
-      int highestScore = 0;
-      String hsGame = "";
-     /* for (int i = 0; i < .getLength(); i++)
+    public void scoreBoard(String msg) {
+        String scoreMsg = "";
+
+        int highScore = -1;
+        int highestScore = 0;
+        String hsGame = "";
+        /* for (int i = 0; i < .getLength(); i++)
       {
         Element xmlNode = (Element)counterNodes.item(i);
         switch (xmlNode.getAttribute("name"))
@@ -734,7 +692,7 @@ public final class CommandHandler {
         }
     }*/
     }
-    
+
     public boolean checkAuthorization(String command, String username, boolean mod, boolean sub) {
         String auth = "";
         if (username.contentEquals(this.elements.configNode.getElementsByTagName("myChannel").item(0).getTextContent())) {
@@ -834,7 +792,9 @@ public final class CommandHandler {
     }
 
     /**
-     * Plays sound file based on attached .wav to certain commands within sound="" in XML. 
+     * Plays sound file based on attached .wav to certain commands within
+     * sound="" in XML. This may need to be patched out if the sun.audio API
+     * becomes unavailable
      *
      * @param file
      */
@@ -867,11 +827,9 @@ public final class CommandHandler {
     /**
      * This method checks whether a command has already been reserved.
      *
-     * @param command 
-     * The command to check for.
+     * @param command The command to check for.
      *
-     * @return 
-     * True - the command has been reserved and we shouldn't override it
+     * @return True - the command has been reserved and we shouldn't override it
      * False - the command has not been reserved and we can override it
      */
     private boolean isReservedCommand(final String command) {
@@ -910,27 +868,23 @@ public final class CommandHandler {
     }
 
     /**
-     * This method checks the arguments for a particular command and the 
+     * This method checks the arguments for a particular command and the
      * arguments needed and returns the parameters.
-     * 
+     *
      * It simply throws an exception if the arguments defined are not the ones
      * that are needed.
-     * 
-     * @param cmd
-     * The command for the request
-     * 
-     * @param input
-     * A given input command for the request
-     * 
-     * @param paramRequired
-     * True - additional parameters are needed
-     * False - no additional parameters are needed
-     * 
-     * @return
-     * The additional parameters 
-     * 
-     * @throws IllegalArgumentException 
-     * An exception if the user never input all the parameters
+     *
+     * @param cmd The command for the request
+     *
+     * @param input A given input command for the request
+     *
+     * @param paramRequired True - additional parameters are needed False - no
+     * additional parameters are needed
+     *
+     * @return The additional parameters
+     *
+     * @throws IllegalArgumentException An exception if the user never input all
+     * the parameters
      */
     private String getInputParameter(String cmd, String input, boolean paramRequired)
             throws IllegalArgumentException {

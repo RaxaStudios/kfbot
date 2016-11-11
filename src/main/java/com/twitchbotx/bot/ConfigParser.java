@@ -23,6 +23,7 @@ public final class ConfigParser {
      * An inner class that holds all the positions of all the elements.
      */
     public final class Elements {
+
         public Document doc;
 
         public Element configNode;
@@ -34,8 +35,6 @@ public final class ConfigParser {
         public NodeList commandNodes;
 
         public NodeList counterNodes;
-        
-
 
     }
 
@@ -47,7 +46,7 @@ public final class ConfigParser {
     public final class Configuration {
 
         public String account;
-        
+
         public String clientID;
 
         public String password;
@@ -73,8 +72,8 @@ public final class ConfigParser {
     /**
      * This method parses the configuration and pulls information
      *
-     * @param configNode 
-     * An XML element for positioning the config node of the XML file
+     * @param configNode An XML element for positioning the config node of the
+     * XML file
      *
      * @return A class of configurations for unchanged configuration
      */
@@ -94,7 +93,7 @@ public final class ConfigParser {
 
         configuration.port
                 = Integer.parseInt(configNode.getElementsByTagName("ircPort").item(0).getTextContent());
-        
+
         configuration.clientID
                 = configNode.getElementsByTagName("botClientID").item(0).getTextContent();
 
@@ -102,25 +101,22 @@ public final class ConfigParser {
     }
 
     /**
-     * This method will parse the configuration and save off references to
-     * each of the parsed XML file parts.
+     * This method will parse the configuration and save off references to each
+     * of the parsed XML file parts.
      *
-     * @param configFile
-     * The configuration file path (.XML file path) from the source code path
-     * 
-     * @return
-     * A set of references of the XML file.
+     * @param configFile The configuration file path (.XML file path) from the
+     * source code path
      *
-     * @throws ParserConfigurationException
-     * If the file cannot be parsed (not a valid XML file), this exception is
-     * thrown.
-     * 
-     * @throws SAXException
-     * If the SAX parser fails to parse an element, this exception is thrown.
-     * 
-     * @throws IOException
-     * If the file cannot be read (no file exist, or wrong path), this 
+     * @return A set of references of the XML file.
+     *
+     * @throws ParserConfigurationException If the file cannot be parsed (not a
+     * valid XML file), this exception is thrown.
+     *
+     * @throws SAXException If the SAX parser fails to parse an element, this
      * exception is thrown.
+     *
+     * @throws IOException If the file cannot be read (no file exist, or wrong
+     * path), this exception is thrown.
      */
     public Elements parseConfiguration(final String configFile)
             throws ParserConfigurationException, SAXException, IOException {

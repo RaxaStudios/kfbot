@@ -7,15 +7,14 @@ package com.twitchbotx.bot;
 
 /**
  * To handle the counter system used for donation wars/death-counter/etc
- * 
- * Stored in XML
- * Write data to TXT/INI/etc for use on stream
- * 
+ *
+ * Stored in XML Write data to TXT/INI/etc for use on stream
+ *
  * Allow for addition/deletion of counters
- * 
+ *
  * Allow for setting of value, not name of counter
- * 
+ *
  */
 public class CountHandler {
-    
+
 }
