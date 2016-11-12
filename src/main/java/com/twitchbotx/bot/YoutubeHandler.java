@@ -39,7 +39,6 @@ public final class YoutubeHandler {
             ytAPI = ytAPI.replaceAll("#key", "&key=" + this.elements.configNode.getElementsByTagName("youtubeAPI").item(0).getTextContent());
             URL url = new URL(ytAPI);
             URLConnection con = (URLConnection) url.openConnection();
-            System.out.println(con);
             BufferedReader bufReader = new BufferedReader(new InputStreamReader(con.getInputStream()));
             String line;
             StringBuilder response = new StringBuilder();
@@ -58,7 +57,7 @@ public final class YoutubeHandler {
                 }
             }
         } catch (IOException e) {
-            System.out.println("GetTitle.GetTitle - error opening or reading URL: " + e);
+            LOGGER.info("GetTitle.GetTitle - error opening or reading URL: " + e.toString());
         }
     }
 
@@ -84,7 +83,6 @@ public final class YoutubeHandler {
                     int startToken = msg.indexOf("youtu.be") + 9;
                     int endToken = msg.indexOf("/") + 1;
                     String ytId = msg.substring(startToken, endToken);
-                    System.out.println(ytId);
                     getYoutubeTitle(ytId);
                 } else {
                     return;

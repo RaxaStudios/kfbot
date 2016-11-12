@@ -492,7 +492,6 @@ public final class CommandHandler {
             String inputLine;
             while ((inputLine = brin.readLine()) != null) {
                 response.append(inputLine);
-                System.out.println(inputLine);
             }
             brin.close();
             if (response.toString().contains("404")) {
@@ -502,7 +501,6 @@ public final class CommandHandler {
                 int ei = response.toString().indexOf("T", bi);
 
                 String s = response.toString().substring(bi, ei);
-                System.out.println(s);
                 DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
                 LocalDate begin = LocalDate.parse(s, formatter);
                 LocalDate today = LocalDate.now();
@@ -645,12 +643,10 @@ public final class CommandHandler {
 
     public void count(String msg) {
         try {
-            System.out.println("auth problem");
-            String parameters = getInputParameter("!count", msg, true);
+            String parameters = getInputParameter("!countadd", msg, true);
             int separator = parameters.indexOf(" ");
             String name = parameters.substring(0, separator);
             int delta = Integer.parseInt(parameters.substring(separator + 1));
-            System.out.println(name + " " + delta + " " + parameters);
             for (int i = 0; i < this.elements.counterNodes.getLength(); i++) {
                 Node n = this.elements.counterNodes.item(i);
                 Element e = (Element) n;
@@ -664,7 +660,7 @@ public final class CommandHandler {
             }
             sendMessage("Counter [" + name + "] not found.");
         } catch (IllegalArgumentException e) {
-            sendMessage("Syntax: !count [name] [value]");
+            sendMessage("Syntax: !countadd [name] [value]");
         }
     }
 

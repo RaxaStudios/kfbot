@@ -28,7 +28,6 @@ public class ModerationHandler {
     public Boolean filterCheck(String msg) {
         for (int i = 0; i < elements.filterNodes.getLength(); i++) {
             Element ca = (Element) elements.filterNodes.item(i);
-            System.out.println(ca);
             if (!Boolean.parseBoolean(ca.getAttribute("disabled"))) {
                 String filter = ca.getAttribute("name");
                 if (msg.contains(filter)) {

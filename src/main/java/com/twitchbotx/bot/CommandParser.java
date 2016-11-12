@@ -197,9 +197,8 @@ public final class CommandParser {
             }
             return;
         }
-        if (trailing.startsWith("!count")) {
-            if (commandHandler.checkAuthorization("!count", username, mod, sub)) {
-                System.out.println("test" + username + mod + sub);
+        if (trailing.startsWith("!countadd")) {
+            if (commandHandler.checkAuthorization("!countadd", username, mod, sub)) {
                 commandHandler.count(trailing);
                 
             }

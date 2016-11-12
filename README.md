@@ -69,12 +69,12 @@ Moderator + commands:
 !cnt-delete <counter name>
 !cnt-set <counter name> <#>
 !cnt-current <counter name>
-!count <counter name> <#>
+!countadd <counter name> <#>
 !totals 
 
 Note:
 	-add creates a new counter with value 0
-	count adds the <#> to the counter's total
+	countadd adds the <#> to the counter's total
 	totals shows all counters and values
 		currently capped at 4 counters
 		added to v1.09 enhancements
