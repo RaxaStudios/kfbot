@@ -36,6 +36,10 @@ public final class ConfigParser {
 
         public NodeList counterNodes;
 
+        public Element filters;
+
+        public NodeList filterNodes;
+
     }
 
     /**
@@ -141,6 +145,8 @@ public final class ConfigParser {
         elements.commandNodes = elements.commands.getElementsByTagName("command");
         elements.counters = (Element) elements.doc.getElementsByTagName("counters").item(0);
         elements.counterNodes = elements.counters.getElementsByTagName("counter");
+        elements.filters = (Element) elements.doc.getElementsByTagName("filters").item(0);
+        elements.filterNodes = elements.filters.getElementsByTagName("filter");
         return elements;
     }
 }

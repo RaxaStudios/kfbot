@@ -9,6 +9,9 @@ import org.w3c.dom.Element;
 /*
 ** Roughly 15 minute intervals between command sendMessage, 
 ** OR based on number of messages between sendMessage
+**
+** RE-ADD online check timer foro online-only timer functionality 
+** as well as for future discord stream is live function
  */
 /**
  * This class is responsible for timer management.
@@ -65,7 +68,7 @@ public final class TimerManagement {
         public void run() {
             new Timer().schedule(new rTimer(this.message, this.repeatingTimer), this.repeatingTimer);
             /*sendTimer sendMessage = new sendTimer(this.message);*/
-            sendMessage.run();
+            //sendMessage.run();
             /*sendMessage(this.message);*/
 
             System.out.println("Starting repeating commands" + this.message);

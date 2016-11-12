@@ -109,6 +109,7 @@ public final class TwitchBotX {
             out.println("NICK " + config.account);
             out.println("JOIN #" + config.joinedChannel);
             out.println("CAP REQ :twitch.tv/tags");
+            out.println("CAP REQ :twitch.tv/commands");
 
             final String ReadyMessage = "/me > " + BOT_VERSION + " has joined the channel.";
             out.println("PRIVMSG #"
@@ -119,7 +120,7 @@ public final class TwitchBotX {
             LOGGER.info("Bot is now ready for service.");
 
             // start all periodic timers for broadcasting events
-            startTimers(elements);
+            // startTimers(elements);
 
             // start doing a blocking read on the socket
             beginReadingMessages(elements);

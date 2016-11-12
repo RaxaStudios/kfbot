@@ -21,7 +21,7 @@ public final class CommandParser {
     private final YoutubeHandler youtubeHandler;
 
     // Soon to be added for filter options
-    private final ModerationHandler moderationHandler = new ModerationHandler();
+    private final ModerationHandler moderationHandler;
 
     // A simple constructor for this class that takes in the XML elements
     // for quick modification
@@ -30,6 +30,7 @@ public final class CommandParser {
         this.commandHandler = new CommandHandler(elements, stream);
         this.outstream = stream;
         this.youtubeHandler = new YoutubeHandler(elements, stream);
+        this.moderationHandler = new ModerationHandler(elements, stream);
     }
 
     /**
@@ -55,10 +56,9 @@ public final class CommandParser {
             final boolean mod,
             final boolean sub,
             final String trailing) {
-
         commandHandler.pyramidDetection(username, trailing);
         youtubeHandler.handleLinkRequest(trailing);
-        moderationHandler.handleTool(trailing);
+        moderationHandler.handleTool(username, trailing);
 
         if (!trailing.startsWith("!")) {
             return;
@@ -147,17 +147,17 @@ public final class CommandParser {
 
         if (trailing.startsWith("!filter-all")) {
             if (commandHandler.checkAuthorization("!filter-all", username, mod, sub)) {
-                moderationHandler.handleTool(trailing);
+                commandHandler.filterAll(trailing, username);
             }
         }
         if (trailing.startsWith("!filter-add")) {
             if (commandHandler.checkAuthorization("!filter-add", username, mod, sub)) {
-                moderationHandler.handleTool(trailing);
+                commandHandler.filterAdd(trailing, username);
             }
         }
         if (trailing.startsWith("!filter-delete")) {
             if (commandHandler.checkAuthorization("!filter-delete", username, mod, sub)) {
-                moderationHandler.handleTool(trailing);
+                commandHandler.filterDel(trailing, username);
             }
         }
 
@@ -199,14 +199,16 @@ public final class CommandParser {
         }
         if (trailing.startsWith("!count")) {
             if (commandHandler.checkAuthorization("!count", username, mod, sub)) {
+                System.out.println("test" + username + mod + sub);
                 commandHandler.count(trailing);
-                return;
+                
             }
+            return;
         }
 
-        if (trailing.startsWith("!scoreboard")) {
-            if (commandHandler.checkAuthorization("!scoreboard", username, mod, sub)) {
-                commandHandler.scoreBoard(trailing);
+        if (trailing.startsWith("!totals")) {
+            if (commandHandler.checkAuthorization("!totals", username, mod, sub)) {
+                commandHandler.totals(trailing);
             }
             return;
         }

@@ -28,8 +28,6 @@ import java.time.LocalDate;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
-import java.util.Timer;
-import java.util.TimerTask;
 
 /**
  * This class is a command handler for most of the common commands in this bot.
@@ -42,7 +40,6 @@ public final class CommandHandler {
         ** filter, command, set broadcaster only
         ** See XML for other requirements
      */
-
     private static final Logger LOGGER = Logger.getLogger(TwitchBotX.class.getSimpleName());
 
     private final ConfigParser.Elements elements;
@@ -429,7 +426,6 @@ public final class CommandHandler {
 ** Creates Strings to hold content placed between int "bi" and int "ei" as per their defined index
 ** 
      */
-
     public void uptime(String msg) {
         try {
             String statusURL = this.elements.configNode.getElementsByTagName("twitchStreamerStatus").item(0).getTextContent();
@@ -481,7 +477,6 @@ public final class CommandHandler {
 ** @return formated date of created_at per https://api.twitch.tv/kraken/users/test_user1/follows/channels/test_channel
 **
      */
-
     public void followage(String user) {
         try {
             String followURL = this.elements.configNode.getElementsByTagName("twitchFollowage").item(0).getTextContent();
@@ -569,10 +564,10 @@ public final class CommandHandler {
         }
     }
 
-    /* This section for adding/removing/setting counts needs to be rearranged.
- * Configure system to work with objective count names/amounts, not hard-coded   
- *
- * return name and value   
+    /* 
+    ** Allows for counters to be added, deleted, set, added to, and all totals calls
+    **
+    ** return name and value   
      */
     public void cntAdd(String msg) {
         try {
@@ -650,10 +645,12 @@ public final class CommandHandler {
 
     public void count(String msg) {
         try {
+            System.out.println("auth problem");
             String parameters = getInputParameter("!count", msg, true);
             int separator = parameters.indexOf(" ");
             String name = parameters.substring(0, separator);
             int delta = Integer.parseInt(parameters.substring(separator + 1));
+            System.out.println(name + " " + delta + " " + parameters);
             for (int i = 0; i < this.elements.counterNodes.getLength(); i++) {
                 Node n = this.elements.counterNodes.item(i);
                 Element e = (Element) n;
@@ -671,26 +668,105 @@ public final class CommandHandler {
         }
     }
 
-    /*
-    Need to rework to function as a call for all current counters with totals
-    Add/Delete via commands, data stored in XML
-     */
-
-    public void scoreBoard(String msg) {
-        String scoreMsg = "";
-
-        int highScore = -1;
-        int highestScore = 0;
-        String hsGame = "";
-        /* for (int i = 0; i < .getLength(); i++)
-      {
-        Element xmlNode = (Element)counterNodes.item(i);
-        switch (xmlNode.getAttribute("name"))
-        {
-        
-      sendMessage(scoreMsg);
+    public void totals(String msg) {
+        try {
+            String[][] counters = new String[Integer.decode(elements.configNode.getElementsByTagName("numberOfCounters").item(0).getTextContent())][2];
+            int count = 0;
+            for (int i = 0; i < this.elements.counterNodes.getLength(); i++) {
+                Node n = this.elements.counterNodes.item(i);
+                Element e = (Element) n;
+                counters[i][0] = e.getAttribute("name");
+                counters[i][1] = e.getTextContent();
+                count++;
+            }
+            switch (count) {
+                case 1:
+                    sendMessage("Current totals: [" + counters[0][0] + "]: " + counters[0][1]);
+                    break;
+                case 2:
+                    sendMessage("Current totals: [" + counters[0][0] + "]: " + counters[0][1] + " [" + counters[1][0] + "]: " + counters[1][1]);
+                    break;
+                case 3:
+                    sendMessage("Current totals: [" + counters[0][0] + "]: " + counters[0][1] + " [" + counters[1][0] + "]: " + counters[1][1] + " [" + counters[2][0] + "]: " + counters[2][1]);
+                    break;
+                case 4:
+                    sendMessage("Current totals: [" + counters[0][0] + "]: " + counters[0][1] + " [" + counters[1][0] + "]: " + counters[1][1] + " [" + counters[2][0] + "]: " + counters[2][1] + " " + counters[3][0] + ": " + counters[3][1]);
+                    break;
+                default:
+                    break;
+            }
+        } catch (IllegalArgumentException e) {
+            sendMessage("No counts found.");
         }
-    }*/
+    }
+
+    /*
+    ** Methods to add and remove moderator filters
+    ** 
+     */
+    public void filterAll(String msg, String user) {
+        try {
+            for (int i = 0; i < this.elements.filterNodes.getLength(); i++) {
+                Node n = this.elements.filterNodes.item(i);
+                Element e = (Element) n;
+                sendWhisper(".w " + user + " Name: " + e.getAttribute("name") + " disabled: " + e.getAttribute("disabled"));
+            }
+            return;
+        } catch (IllegalArgumentException e) {
+            LOGGER.info(e.toString());
+        }
+        sendMessage(".w " + user + " No filters found.");
+    }
+
+    public void filterAdd(String msg, String user) {
+        try {
+            String filterName = getInputParameter("!filter-add", msg, true);
+            for (int i = 0; i < this.elements.filterNodes.getLength(); i++) {
+                Node n = this.elements.filterNodes.item(i);
+                Element e = (Element) n;
+                if (filterName.contentEquals(e.getAttribute("name"))) {
+                    sendWhisper(".w " + user + " Filter " + filterName + " already exists.");
+                    return;
+                }
+            }
+            Element newNode = this.elements.doc.createElement("filter");
+            newNode.setAttribute("disable", "false");
+            newNode.setAttribute("name", filterName);
+            this.elements.filters.appendChild(newNode);
+            writeXML();
+            sendWhisper(".w " + user + " Filter " + filterName + " added.");
+        } catch (IllegalArgumentException e) {
+            LOGGER.info(e.toString());
+        }
+    }
+
+    public void filterDel(String msg, String user) {
+        try {
+            String filterName = getInputParameter("!filter-delete", msg, true);
+            for (int i = 0; i < this.elements.filterNodes.getLength(); i++) {
+                Node n = this.elements.filterNodes.item(i);
+                Element e = (Element) n;
+                if (filterName.contentEquals(e.getAttribute("name"))) {
+                    this.elements.filters.removeChild(n);
+                    writeXML();
+                    sendWhisper(".w " + user + " Filter " + filterName + " deleted.");
+                    return;
+                }
+            }
+
+            sendWhisper(".w " + user + " Filter " + filterName + " not found.");
+        } catch (IllegalArgumentException e) {
+            LOGGER.info(e.toString());
+        }
+    }
+
+    private void sendWhisper(final String msg) {
+        final String message = msg;
+        this.outstream.println("PRIVMSG #"
+                + this.elements.configNode.getElementsByTagName("myChannel").item(0).getTextContent()
+                + " "
+                + ":"
+                + message);
     }
 
     public boolean checkAuthorization(String command, String username, boolean mod, boolean sub) {
@@ -713,12 +789,15 @@ public final class CommandHandler {
             return false;
         }
         if (auth.contains("+" + username + " ")) {
+
             return true;
         }
         if ((auth.contains("-m ")) && mod) {
+
             return false;
         }
         if ((auth.contains("+m ")) && mod) {
+
             return true;
         }
         if ((auth.contains("-s ")) && sub) {
