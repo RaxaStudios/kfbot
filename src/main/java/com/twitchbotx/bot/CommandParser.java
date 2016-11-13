@@ -80,6 +80,7 @@ public final class CommandParser {
         }
         if (trailing.startsWith("!command-add")) {
             if (commandHandler.checkAuthorization("!command-add", username, mod, sub)) {
+                System.out.println("passed checkAuth");
                 commandHandler.addCmd(trailing);
             }
             return;

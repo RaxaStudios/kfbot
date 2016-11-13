@@ -702,11 +702,21 @@ public final class CommandHandler {
      */
     public void filterAll(String msg, String user) {
         try {
+            String[] filters = new String[elements.filterNodes.getLength()];
             for (int i = 0; i < this.elements.filterNodes.getLength(); i++) {
                 Node n = this.elements.filterNodes.item(i);
                 Element e = (Element) n;
-                sendWhisper(".w " + user + " Name: " + e.getAttribute("name") + " disabled: " + e.getAttribute("disabled"));
+                filters[i] = e.getAttribute("name");
             }
+            StringBuilder sb = new StringBuilder();
+            for (int j = 0; j < filters.length; j ++){
+                if (j > 0){
+                sb.append(", ");
+                }
+                sb.append(filters[j]);
+            }
+                sendWhisper(".w " + user + " Current filters: " + sb.toString());
+            
             return;
         } catch (IllegalArgumentException e) {
             LOGGER.info(e.toString());
@@ -721,16 +731,16 @@ public final class CommandHandler {
                 Node n = this.elements.filterNodes.item(i);
                 Element e = (Element) n;
                 if (filterName.contentEquals(e.getAttribute("name"))) {
-                    sendWhisper(".w " + user + " Filter " + filterName + " already exists.");
+                    sendWhisper(".w " + user + " Filter already exists.");
                     return;
                 }
             }
             Element newNode = this.elements.doc.createElement("filter");
-            newNode.setAttribute("disable", "false");
             newNode.setAttribute("name", filterName);
+            newNode.setAttribute("disable", "false");
             this.elements.filters.appendChild(newNode);
             writeXML();
-            sendWhisper(".w " + user + " Filter " + filterName + " added.");
+            sendWhisper(".w " + user + " Filter added.");
         } catch (IllegalArgumentException e) {
             LOGGER.info(e.toString());
         }
@@ -745,12 +755,12 @@ public final class CommandHandler {
                 if (filterName.contentEquals(e.getAttribute("name"))) {
                     this.elements.filters.removeChild(n);
                     writeXML();
-                    sendWhisper(".w " + user + " Filter " + filterName + " deleted.");
+                    sendWhisper(".w " + user + " Filter deleted.");
                     return;
                 }
             }
 
-            sendWhisper(".w " + user + " Filter " + filterName + " not found.");
+            sendWhisper(".w " + user + " Filter not found.");
         } catch (IllegalArgumentException e) {
             LOGGER.info(e.toString());
         }
@@ -767,7 +777,7 @@ public final class CommandHandler {
 
     public boolean checkAuthorization(String command, String username, boolean mod, boolean sub) {
         String auth = "";
-        if (username.contentEquals(this.elements.configNode.getElementsByTagName("myChannel").item(0).getTextContent())) {
+        if (username.toLowerCase().contentEquals(this.elements.configNode.getElementsByTagName("myChannel").item(0).getTextContent())) {
             return true;
         }
         for (int i = 0; i < this.elements.commandNodes.getLength(); i++) {
