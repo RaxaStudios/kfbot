@@ -711,11 +711,11 @@ public final class CommandHandler {
             StringBuilder sb = new StringBuilder();
             for (int j = 0; j < filters.length; j ++){
                 if (j > 0){
-                sb.append(", ");
+                sb.append("], [");
                 }
                 sb.append(filters[j]);
             }
-                sendWhisper(".w " + user + " Current filters: " + sb.toString());
+                sendWhisper(".w " + user + " Current filters: [" + sb.toString() + "]");
             
             return;
         } catch (IllegalArgumentException e) {

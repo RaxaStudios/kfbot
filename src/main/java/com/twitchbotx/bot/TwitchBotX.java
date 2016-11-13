@@ -92,7 +92,7 @@ public final class TwitchBotX {
 
             LOGGER.info("Reading configuration XML file");
             final Elements elements
-                    = configParser.parseConfiguration("./kfbotv1.0.xml");
+                    = configParser.parseConfiguration("./kfbot.xml");
 
             final Configuration config
                     = configParser.getConfiguration(elements.configNode);
