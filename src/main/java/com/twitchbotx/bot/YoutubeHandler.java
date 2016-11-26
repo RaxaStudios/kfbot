@@ -77,14 +77,12 @@ public final class YoutubeHandler {
                     int startToken = msg.indexOf("youtube.com") + 20;
                     int endToken = msg.indexOf("v=") + 13;
                     String ytId = msg.substring(startToken, endToken);
-                    System.out.println(ytId + " youtube.");
                     getYoutubeTitle(ytId);
                 } else if (msg.contains("youtu.be")) {
 
                     int startToken = msg.indexOf("youtu.be") + 9;
                     int endToken = msg.lastIndexOf("/") + 12;
                     String ytId = msg.substring(startToken, endToken);
-                    System.out.println(ytId + " youtu.be");
                     getYoutubeTitle(ytId);
                 } else {
                     return;

@@ -80,7 +80,6 @@ public final class CommandParser {
         }
         if (trailing.startsWith("!command-add")) {
             if (commandHandler.checkAuthorization("!command-add", username, mod, sub)) {
-                System.out.println("passed checkAuth");
                 commandHandler.addCmd(trailing);
             }
             return;
@@ -201,7 +200,7 @@ public final class CommandParser {
         if (trailing.startsWith("!countadd")) {
             if (commandHandler.checkAuthorization("!countadd", username, mod, sub)) {
                 commandHandler.count(trailing);
-                
+
             }
             return;
         }
@@ -264,7 +263,7 @@ public final class CommandParser {
             final int usernamePosition = msg.indexOf("display-name=") + 13;
             final int usernameStopPosition = msg.indexOf(";", usernamePosition);
             if (usernamePosition != -1 && usernameStopPosition != -1) {
-                username = msg.substring(usernamePosition, usernameStopPosition);
+                username = msg.substring(usernamePosition, usernameStopPosition).toLowerCase();
             }
 
             // Split the message into pieces to find the real message

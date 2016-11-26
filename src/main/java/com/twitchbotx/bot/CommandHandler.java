@@ -709,14 +709,14 @@ public final class CommandHandler {
                 filters[i] = e.getAttribute("name");
             }
             StringBuilder sb = new StringBuilder();
-            for (int j = 0; j < filters.length; j ++){
-                if (j > 0){
-                sb.append("], [");
+            for (int j = 0; j < filters.length; j++) {
+                if (j > 0) {
+                    sb.append("], [");
                 }
                 sb.append(filters[j]);
             }
-                sendWhisper(".w " + user + " Current filters: [" + sb.toString() + "]");
-            
+            sendWhisper(".w " + user + " Current filters: [" + sb.toString() + "]");
+
             return;
         } catch (IllegalArgumentException e) {
             LOGGER.info(e.toString());
@@ -777,7 +777,7 @@ public final class CommandHandler {
 
     public boolean checkAuthorization(String command, String username, boolean mod, boolean sub) {
         String auth = "";
-        if (username.toLowerCase().contentEquals(this.elements.configNode.getElementsByTagName("myChannel").item(0).getTextContent())) {
+        if (username.contentEquals(this.elements.configNode.getElementsByTagName("myChannel").item(0).getTextContent())) {
             return true;
         }
         for (int i = 0; i < this.elements.commandNodes.getLength(); i++) {
@@ -791,11 +791,10 @@ public final class CommandHandler {
         if (auth.isEmpty()) {
             return false;
         }
-        if (auth.contains("-" + username + " ")) {
+        if (auth.toLowerCase().contains("-" + username + " ")) {
             return false;
         }
-        if (auth.contains("+" + username + " ")) {
-
+        if (auth.toLowerCase().contains("+" + username + " ")) {
             return true;
         }
         if ((auth.contains("-m ")) && mod) {
