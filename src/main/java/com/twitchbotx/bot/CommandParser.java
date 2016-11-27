@@ -73,7 +73,7 @@ public final class CommandParser {
         }
         if (trailing.startsWith("!followage")) {
             if (commandHandler.checkAuthorization("!followage", username, mod, sub)) {
-                String user = username;
+                String user = username.toLowerCase();
                 commandHandler.followage(user);
             }
 
@@ -220,7 +220,6 @@ public final class CommandParser {
      * @param msg A string that represents the message type.
      */
     public void parse(String msg) {
-
         try {
             // If nothing is provided, exit out of here
             if (msg == null || msg.isEmpty()) {
@@ -260,8 +259,8 @@ public final class CommandParser {
             }
 
             // Find the username
-            final int usernamePosition = msg.indexOf("display-name=") + 13;
-            final int usernameStopPosition = msg.indexOf(";", usernamePosition);
+            final int usernamePosition = msg.indexOf("user-type=") + 12;
+            final int usernameStopPosition = msg.indexOf("!", usernamePosition);
             if (usernamePosition != -1 && usernameStopPosition != -1) {
                 username = msg.substring(usernamePosition, usernameStopPosition).toLowerCase();
             }

@@ -121,7 +121,6 @@ public final class TwitchBotX {
 
             // start all periodic timers for broadcasting events
             // startTimers(elements);
-
             // start doing a blocking read on the socket
             beginReadingMessages(elements);
         } catch (ParserConfigurationException | SAXException | IOException e) {

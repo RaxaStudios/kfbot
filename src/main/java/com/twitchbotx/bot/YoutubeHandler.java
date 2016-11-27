@@ -15,10 +15,11 @@ import java.util.logging.Logger;
  * video back.
  */
 public final class YoutubeHandler {
-
+    
     private final PrintStream outstream;
     private static final Logger LOGGER = Logger.getLogger(YoutubeHandler.class.getSimpleName());
     private final ConfigParser.Elements elements;
+
 
     public YoutubeHandler(final ConfigParser.Elements elements,
             final PrintStream stream) {
