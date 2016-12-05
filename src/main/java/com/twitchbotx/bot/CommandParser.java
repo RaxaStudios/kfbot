@@ -259,10 +259,21 @@ public final class CommandParser {
             }
 
             // Find the username
-            final int usernamePosition = msg.indexOf("user-type=") + 12;
-            final int usernameStopPosition = msg.indexOf("!", usernamePosition);
-            if (usernamePosition != -1 && usernameStopPosition != -1) {
-                username = msg.substring(usernamePosition, usernameStopPosition).toLowerCase();
+            if (msg.contains("user-type=mod")) {
+                final int usernamePosition = msg.indexOf("user-type=") + 15;
+                final int usernameStopPosition = msg.indexOf("!", usernamePosition);
+                if (usernamePosition != -1 && usernameStopPosition != -1) {
+                    username = msg.substring(usernamePosition, usernameStopPosition).toLowerCase();
+                    System.out.println(username);
+                }
+            } else {
+                final int usernamePosition = msg.indexOf("user-type=") + 12;
+
+                final int usernameStopPosition = msg.indexOf("!", usernamePosition);
+                if (usernamePosition != -1 && usernameStopPosition != -1) {
+                    username = msg.substring(usernamePosition, usernameStopPosition).toLowerCase();
+                    System.out.println(username);
+                }
             }
 
             // Split the message into pieces to find the real message

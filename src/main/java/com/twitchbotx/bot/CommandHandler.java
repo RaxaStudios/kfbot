@@ -3,6 +3,7 @@ package com.twitchbotx.bot;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
@@ -493,20 +494,20 @@ public final class CommandHandler {
             while ((inputLine = brin.readLine()) != null) {
                 response.append(inputLine);
             }
-            brin.close();
-            if (response.toString().contains("404")) {
-                ;
-            } else {
-                int bi = response.toString().indexOf("\"created_at\":") + 14;
-                int ei = response.toString().indexOf("T", bi);
 
-                String s = response.toString().substring(bi, ei);
-                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-                LocalDate begin = LocalDate.parse(s, formatter);
-                LocalDate today = LocalDate.now();
-                long gap = ChronoUnit.DAYS.between(begin, today);
-                sendMessage(user + " has been following for " + gap + " days. Starting on " + begin + ".");
-            }
+            int bi = response.toString().indexOf("\"created_at\":") + 14;
+            int ei = response.toString().indexOf("T", bi);
+
+            String s = response.toString().substring(bi, ei);
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+            LocalDate begin = LocalDate.parse(s, formatter);
+            LocalDate today = LocalDate.now();
+            long gap = ChronoUnit.DAYS.between(begin, today);
+            sendMessage(user + " has been following for " + gap + " days. Starting on " + begin + ".");
+
+            brin.close();
+        } catch (FileNotFoundException e) {
+            sendMessage("User " + user + "  is not following " + this.elements.configNode.getElementsByTagName("myChannel").item(0).getTextContent());
         } catch (Exception e) {
             LOGGER.severe(e.toString());
         }
@@ -792,9 +793,14 @@ public final class CommandHandler {
             return false;
         }
         if (auth.toLowerCase().contains("-" + username + " ")) {
+            System.out.println(auth.toLowerCase().contains("+" + username + " ") + " TEST");
+            System.out.println(auth.toLowerCase() + " TEST2");
             return false;
         }
         if (auth.toLowerCase().contains("+" + username + " ")) {
+            System.out.println(auth.toLowerCase().contains("+" + username + " ") + " TEST3");
+            System.out.println(auth.toLowerCase() + " TEST4");
+            System.out.println(auth + " TEST4");
             return true;
         }
         if ((auth.contains("-m ")) && mod) {
@@ -897,7 +903,7 @@ public final class CommandHandler {
      */
     private void writeXML() {
         try {
-            File configFile = new File("kfbotv1.0.xml");
+            File configFile = new File("kfbot.xml");
             TransformerFactory tFactory = TransformerFactory.newInstance();
             Transformer transformer = tFactory.newTransformer();
             DOMSource source = new DOMSource(this.elements.doc);
