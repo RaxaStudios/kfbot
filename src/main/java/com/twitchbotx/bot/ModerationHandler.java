@@ -18,6 +18,7 @@ public class ModerationHandler {
     private final PrintStream outstream;
     private static final Logger LOGGER = Logger.getLogger(YoutubeHandler.class.getSimpleName());
     private final ConfigParser.Elements elements;
+    private String reason;
 
     public ModerationHandler(final ConfigParser.Elements elements,
             final PrintStream stream) {
@@ -25,26 +26,30 @@ public class ModerationHandler {
         this.outstream = stream;
     }
 
-    public Boolean filterCheck(String msg) {
+    public String filterCheck(String msg) {
         for (int i = 0; i < elements.filterNodes.getLength(); i++) {
             Element ca = (Element) elements.filterNodes.item(i);
             if (!Boolean.parseBoolean(ca.getAttribute("disabled"))) {
                 String filter = ca.getAttribute("name");
+                reason = ca.getAttribute("reason");
                 if (msg.contains(filter)) {
-                    return true;
+                    return reason;
                 }
             } else {
-                return false;
+                reason = "no filter";
+                return reason;
             }
         }
-        return false;
+        reason = "no filter";
+        return reason;
     }
 
     public void handleTool(String username, String msg) {
         for (;;) {
             try {
-                if (filterCheck(msg)) {
-                    sendMessage(".timeout " + username + " 600 Caught by filter");
+                if (!filterCheck(msg).equals("no filter")) {
+                    System.out.println(reason);
+                    sendMessage(".timeout " + username + " 600 " + reason);
                     return;
                 }
                 return;
