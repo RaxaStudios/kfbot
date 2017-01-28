@@ -1,6 +1,9 @@
 package com.twitchbotx.bot;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -29,6 +32,7 @@ import java.time.LocalDate;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
+import java.util.Arrays;
 
 /**
  * This class is a command handler for most of the common commands in this bot.
@@ -70,7 +74,7 @@ public final class CommandHandler {
         "!cnt-delete",
         "!cnt-set",
         "!cnt-current",
-        "count",
+        "!count",
         "!filter-all",
         "!filter-add",
         "!filter-delete",};
@@ -88,6 +92,7 @@ public final class CommandHandler {
         public CachedMessage(final String username, final String message) {
             this.user = username;
             this.msg = message;
+            System.out.println(this.user + this.msg + " CACHED MESSAGES");
         }
 
         public String getUser() {
@@ -206,7 +211,7 @@ public final class CommandHandler {
 
             Element newNode = this.elements.doc.createElement("command");
             newNode.appendChild(this.elements.doc.createTextNode(txt));
-            newNode.setAttribute("name", cmd);
+            newNode.setAttribute("name", cmd.toLowerCase());
             newNode.setAttribute("auth", "");
             newNode.setAttribute("repeating", "false");
             newNode.setAttribute("initialDelay", "0");
@@ -563,6 +568,68 @@ public final class CommandHandler {
         }
     }
 
+    /*
+    ** !commands shows all commands available to user ie mod, sub, username
+    ** @param username, mod status, sub status
+    ** @return none
+     */
+    public void commands(String user, boolean mod, boolean sub) {
+        String auth = "";
+        if (user.contentEquals(this.elements.configNode.getElementsByTagName("myChannel").item(0).getTextContent())) {
+            sendMessage("Command list too long for chat, see commands text file in main bot folder.");
+            writeCommandFile();
+        }
+        /*for (int i = 0; i < this.elements.commandNodes.getLength(); i++) {
+            Node n = this.elements.commandNodes.item(i);
+            Element cmdXmlNode = (Element) n;
+            auth = cmdXmlNode.getAttribute("auth");
+
+        }
+        try {
+            String[] commands = new String[elements.commandNodes.getLength()];
+            for (int i = 0; i < this.elements.commandNodes.getLength(); i++) {
+                Node n = this.elements.commandNodes.item(i);
+                Element e = (Element) n;
+                if (checkAuthorization(e.getAttribute("name"), user, mod, sub)) {
+                    if (!e.getAttribute("auth").contains("-o ")) {
+                        commands[i] = e.getAttribute("name");
+                    }
+                }
+            }
+            StringBuilder sb = new StringBuilder();
+            for (int j = 0; j < commands.length; j++) {
+                if (commands[j] != null) {
+                    if (j > 0) {
+                        sb.append(", ");
+                    }
+                    sb.append(commands[j]);
+                }
+            }
+            sendMessage("@" + user + ", commands available to you: " + sb.toString());
+        } catch (IllegalArgumentException e) {
+            sendMessage("No commands found.");
+        }*/
+    }
+
+    public void writeCommandFile() {
+        try {
+            String[] commands = new String[elements.commandNodes.getLength()];
+            for (int i = 0; i < this.elements.commandNodes.getLength(); i++) {
+                Node n = this.elements.commandNodes.item(i);
+                Element e = (Element) n;
+                commands[i] = e.getAttribute("name");
+            }
+            FileWriter fw = new FileWriter("commands.txt");
+            for (int j = 0; j < commands.length; j++) {
+                fw.write(commands[j] + "\n");
+                LOGGER.info(commands[j]);
+            }
+            fw.close();
+        } catch (IOException e) {
+            LOGGER.info(e.toString());
+        }
+    }
+
     /* 
     ** Allows for counters to be added, deleted, set, added to, and all totals calls
     **
@@ -722,22 +789,26 @@ public final class CommandHandler {
         } catch (IllegalArgumentException e) {
             LOGGER.info(e.toString());
         }
-        sendMessage(".w " + user + " No filters found.");
+        sendWhisper(".w " + user + " No filters found.");
     }
 
     public void filterAdd(String msg, String user) {
         try {
-            String filterName = getInputParameter("!filter-add", msg, true);
+            String parameters = getInputParameter("!filter-add", msg, true);
+            int separator = parameters.indexOf(" ");
+            String filter = parameters.substring(0, separator);
+            String reason = parameters.substring(separator + 1);
             for (int i = 0; i < this.elements.filterNodes.getLength(); i++) {
                 Node n = this.elements.filterNodes.item(i);
                 Element e = (Element) n;
-                if (filterName.contentEquals(e.getAttribute("name"))) {
+                if (filter.contentEquals(e.getAttribute("name"))) {
                     sendWhisper(".w " + user + " Filter already exists.");
                     return;
                 }
             }
             Element newNode = this.elements.doc.createElement("filter");
-            newNode.setAttribute("name", filterName);
+            newNode.setAttribute("name", filter);
+            newNode.setAttribute("reason", reason);
             newNode.setAttribute("disable", "false");
             this.elements.filters.appendChild(newNode);
             writeXML();
@@ -778,6 +849,7 @@ public final class CommandHandler {
 
     public boolean checkAuthorization(String command, String username, boolean mod, boolean sub) {
         String auth = "";
+        LOGGER.info("COMMAND: " + command + " USERNAME: " + username + " MOD: " + mod + " SUB: " + sub);
         if (username.contentEquals(this.elements.configNode.getElementsByTagName("myChannel").item(0).getTextContent())) {
             return true;
         }
@@ -793,22 +865,17 @@ public final class CommandHandler {
             return false;
         }
         if (auth.toLowerCase().contains("-" + username + " ")) {
-            System.out.println(auth.toLowerCase().contains("+" + username + " ") + " TEST");
-            System.out.println(auth.toLowerCase() + " TEST2");
             return false;
         }
         if (auth.toLowerCase().contains("+" + username + " ")) {
-            System.out.println(auth.toLowerCase().contains("+" + username + " ") + " TEST3");
-            System.out.println(auth.toLowerCase() + " TEST4");
-            System.out.println(auth + " TEST4");
             return true;
         }
         if ((auth.contains("-m ")) && mod) {
-
+            LOGGER.info("MOD FALSE: ");
             return false;
         }
         if ((auth.contains("+m ")) && mod) {
-
+            LOGGER.info("MOD TRUE: ");
             return true;
         }
         if ((auth.contains("-s ")) && sub) {
@@ -836,7 +903,7 @@ public final class CommandHandler {
      *
      * @param msg A message provided by the user
      */
-    public void pyramidDetection(final String user, final String msg) {
+    public void pyramidDetection(final String user, String msg) {
         recentMessages.add(new CachedMessage(user, msg));
         if (recentMessages.size() > Integer.parseInt(
                 this.elements.configNode.getElementsByTagName("recentMessageCacheSize").item(0).getTextContent())) {
@@ -846,16 +913,20 @@ public final class CommandHandler {
         String pattern;
         if (patternEnd == -1) {
             pattern = msg;
+            System.out.println(pattern + " PATTERN1");
         } else {
             pattern = msg.substring(0, msg.indexOf(" "));
+            System.out.println(pattern + " PATTERN2");
         }
         if (!msg.contentEquals(pattern + " " + pattern + " " + pattern)) {
+            System.out.println(msg + " IF MSG DOES NOT TEST");
             return;
         }
         int patternCount = 3;
         for (int i = recentMessages.size() - 2; i >= 0; i--) {
             CachedMessage cm = (CachedMessage) recentMessages.get(i);
             if ((patternCount == 3) && (cm.getMsg().contentEquals(pattern + " " + pattern)) && (cm.getUser().contentEquals(user))) {
+                System.out.println(cm.getMsg() + " CACHED MESSAGE PATTERN 2");
                 patternCount = 2;
             } else if ((patternCount == 2) && (cm.getMsg().contentEquals(pattern)) && (cm.getUser().contentEquals(user))) {
                 sendMessage(this.elements.configNode.getElementsByTagName("pyramidResponse").item(0).getTextContent());

@@ -60,6 +60,8 @@ public final class ConfigParser {
         public String host;
 
         public int port;
+        
+        public String pubSub;
 
         @Override
         public String toString() {
@@ -100,6 +102,8 @@ public final class ConfigParser {
 
         configuration.clientID
                 = configNode.getElementsByTagName("botClientID").item(0).getTextContent();
+        
+        configuration.pubSub = configNode.getElementsByTagName("pubSub").item(0).getTextContent();
 
         return configuration;
     }

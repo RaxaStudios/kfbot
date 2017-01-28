@@ -55,7 +55,23 @@ public final class CommandParser {
             final String username,
             final boolean mod,
             final boolean sub,
-            final String trailing) {
+            String trailing) {
+        if (trailing.contains("")) {
+            trailing = trailing.replaceAll("", "");
+            trailing = trailing.replaceFirst("ACTION ", "");
+        }
+        if (trailing.startsWith("!")) {
+            String cmd;
+            int cmdEnd = trailing.indexOf(" ");
+            if (cmdEnd == -1) {
+                trailing = trailing.toLowerCase();
+                System.out.println("TRAIL: " + trailing);
+            } else {
+                cmd = trailing.substring(trailing.indexOf("!"), trailing.indexOf(" "));
+                System.out.println(cmd + " COMMAND");
+            }
+        }
+
         commandHandler.pyramidDetection(username, trailing);
         youtubeHandler.handleLinkRequest(trailing);
         moderationHandler.handleTool(username, trailing);
@@ -76,8 +92,15 @@ public final class CommandParser {
                 String user = username.toLowerCase();
                 commandHandler.followage(user);
             }
-
+            return;
         }
+
+        if (trailing.startsWith("!commands")) {
+            if (commandHandler.checkAuthorization("!commands", username, mod, sub)) {
+                commandHandler.commands(username, mod, sub);
+            }
+        }
+
         if (trailing.startsWith("!command-add")) {
             if (commandHandler.checkAuthorization("!command-add", username, mod, sub)) {
                 commandHandler.addCmd(trailing);
@@ -264,7 +287,6 @@ public final class CommandParser {
                 final int usernameStopPosition = msg.indexOf("!", usernamePosition);
                 if (usernamePosition != -1 && usernameStopPosition != -1) {
                     username = msg.substring(usernamePosition, usernameStopPosition).toLowerCase();
-                    System.out.println(username);
                 }
             } else {
                 final int usernamePosition = msg.indexOf("user-type=") + 12;
@@ -272,7 +294,6 @@ public final class CommandParser {
                 final int usernameStopPosition = msg.indexOf("!", usernamePosition);
                 if (usernamePosition != -1 && usernameStopPosition != -1) {
                     username = msg.substring(usernamePosition, usernameStopPosition).toLowerCase();
-                    System.out.println(username);
                 }
             }
 
