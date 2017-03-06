@@ -72,7 +72,7 @@ public final class CommandParser {
             }
         }
 
-        commandHandler.pyramidDetection(username, trailing);
+        //commandHandler.pyramidDetection(username, trailing);
         youtubeHandler.handleLinkRequest(trailing);
         moderationHandler.handleTool(username, trailing);
 
@@ -282,18 +282,21 @@ public final class CommandParser {
             }
 
             // Find the username
-            if (msg.contains("user-type=mod")) {
-                final int usernamePosition = msg.indexOf("user-type=") + 15;
-                final int usernameStopPosition = msg.indexOf("!", usernamePosition);
-                if (usernamePosition != -1 && usernameStopPosition != -1) {
-                    username = msg.substring(usernamePosition, usernameStopPosition).toLowerCase();
-                }
-            } else {
-                final int usernamePosition = msg.indexOf("user-type=") + 12;
-
-                final int usernameStopPosition = msg.indexOf("!", usernamePosition);
-                if (usernamePosition != -1 && usernameStopPosition != -1) {
-                    username = msg.substring(usernamePosition, usernameStopPosition).toLowerCase();
+           
+            // User-id search for V5 switch
+            /*if (msg.contains("user-id=")){
+                int usernameStart = msg.indexOf("user-id=", msg.indexOf(";"));
+                System.out.println(usernameStart);
+            username = msg.substring(msg.indexOf("user-id=") + 8, msg.indexOf(";", msg.indexOf("user-id=")));
+            System.out.println(username + " USERNAME");
+            }*/
+            
+            if (msg.contains("user-type=")){
+                int usernameStart = msg.indexOf(":", msg.indexOf("user-type="));
+                int usernameEnd = msg.indexOf("!", usernameStart);
+                if (usernameStart != -1 && usernameEnd != -1) {
+                    username = msg.substring(usernameStart + 1, usernameEnd).toLowerCase();
+                    System.out.println(username + " USERNAME");
                 }
             }
 

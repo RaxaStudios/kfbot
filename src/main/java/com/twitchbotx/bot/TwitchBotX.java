@@ -24,7 +24,7 @@ public final class TwitchBotX {
     private BufferedReader in;
     private String dataIn;
 
-    private static final String BOT_VERSION = "v1.08";
+    private static final String BOT_VERSION = "v1.09";
     private final ArrayList RecentMessages = new ArrayList();
 
     private final ConfigParser configParser = new ConfigParser();
@@ -110,6 +110,14 @@ public final class TwitchBotX {
             out.println("JOIN #" + config.joinedChannel);
             out.println("CAP REQ :twitch.tv/tags");
             out.println("CAP REQ :twitch.tv/commands");
+            
+            
+            // Begin connecting to and listening to Twitch PubSub 
+            // whispers and stream is live function grabbed here
+            /*LOGGER.info("Attempt to start reading PUBSUB feed.");
+            PubSubHandler pubSub = new PubSubHandler();
+            final Socket pubS = new Socket(config.pubSub, config.port);*/
+            
 
             final String ReadyMessage = "/me > " + BOT_VERSION + " has joined the channel.";
             out.println("PRIVMSG #"
@@ -121,6 +129,8 @@ public final class TwitchBotX {
 
             // start all periodic timers for broadcasting events
             // startTimers(elements);
+            
+            
             // start doing a blocking read on the socket
             beginReadingMessages(elements);
         } catch (ParserConfigurationException | SAXException | IOException e) {

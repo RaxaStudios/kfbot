@@ -7,6 +7,8 @@ package com.twitchbotx.bot;
 
 import java.io.PrintStream;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.w3c.dom.Element;
 
 /**
@@ -19,6 +21,9 @@ public class ModerationHandler {
     private static final Logger LOGGER = Logger.getLogger(YoutubeHandler.class.getSimpleName());
     private final ConfigParser.Elements elements;
     private String reason;
+    private Pattern pattern;
+    private Matcher matcher;
+    private static final String BANNED_USERNAME = "(\\d{7}([A-z]{1})\\d{7}|\\d{14})";
 
     public ModerationHandler(final ConfigParser.Elements elements,
             final PrintStream stream) {
@@ -52,6 +57,10 @@ public class ModerationHandler {
                     sendMessage(".timeout " + username + " 600 " + reason);
                     return;
                 }
+                else if(userCheck(username)){
+                    sendMessage(".timeout " + username + " 600 Username caught by filter");
+                    return;
+                }
                 return;
 
             } catch (Exception e) {
@@ -60,6 +69,14 @@ public class ModerationHandler {
             return;
         }
 
+    }
+    
+    private boolean userCheck(String username){
+        pattern = Pattern.compile(BANNED_USERNAME);
+        matcher = pattern.matcher(username);
+        System.out.println(matcher.matches());
+        System.out.println(username);
+        return matcher.matches();
     }
 
     private void sendMessage(final String msg) {
