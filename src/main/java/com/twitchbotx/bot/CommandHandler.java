@@ -92,7 +92,7 @@ public final class CommandHandler {
         public CachedMessage(final String username, final String message) {
             this.user = username;
             this.msg = message;
-            System.out.println(this.user + this.msg + " CACHED MESSAGES");
+            //System.out.println(this.user + this.msg + " CACHED MESSAGES");
         }
 
         public String getUser() {
@@ -139,6 +139,7 @@ public final class CommandHandler {
                     endOfCmd = msg.length();
                 }
                 String cmd = msg.substring(0, endOfCmd);
+                cmd = cmd.toLowerCase();
                 if (cmd.contentEquals(e.getAttribute("name"))) {
                     if (!checkAuthorization(cmd, username, mod, sub)) {
                         return;
@@ -622,7 +623,7 @@ public final class CommandHandler {
             FileWriter fw = new FileWriter("commands.txt");
             for (int j = 0; j < commands.length; j++) {
                 fw.write(commands[j] + "\n");
-                LOGGER.info(commands[j]);
+                //LOGGER.info(commands[j]);
             }
             fw.close();
         } catch (IOException e) {
@@ -849,7 +850,7 @@ public final class CommandHandler {
 
     public boolean checkAuthorization(String command, String username, boolean mod, boolean sub) {
         String auth = "";
-        LOGGER.info("COMMAND: " + command + " USERNAME: " + username + " MOD: " + mod + " SUB: " + sub);
+        //LOGGER.info("COMMAND: " + command + " USERNAME: " + username + " MOD: " + mod + " SUB: " + sub);
         if (username.contentEquals(this.elements.configNode.getElementsByTagName("myChannel").item(0).getTextContent())) {
             return true;
         }
@@ -871,11 +872,11 @@ public final class CommandHandler {
             return true;
         }
         if ((auth.contains("-m ")) && mod) {
-            LOGGER.info("MOD FALSE: ");
+            //LOGGER.info("MOD FALSE: ");
             return false;
         }
         if ((auth.contains("+m ")) && mod) {
-            LOGGER.info("MOD TRUE: ");
+           // LOGGER.info("MOD TRUE: ");
             return true;
         }
         if ((auth.contains("-s ")) && sub) {
@@ -913,20 +914,20 @@ public final class CommandHandler {
         String pattern;
         if (patternEnd == -1) {
             pattern = msg;
-            System.out.println(pattern + " PATTERN1");
+            //System.out.println(pattern + " PATTERN1");
         } else {
             pattern = msg.substring(0, msg.indexOf(" "));
-            System.out.println(pattern + " PATTERN2");
+            //System.out.println(pattern + " PATTERN2");
         }
         if (!msg.contentEquals(pattern + " " + pattern + " " + pattern)) {
-            System.out.println(msg + " IF MSG DOES NOT TEST");
+            //System.out.println(msg + " IF MSG DOES NOT TEST");
             return;
         }
         int patternCount = 3;
         for (int i = recentMessages.size() - 2; i >= 0; i--) {
             CachedMessage cm = (CachedMessage) recentMessages.get(i);
             if ((patternCount == 3) && (cm.getMsg().contentEquals(pattern + " " + pattern)) && (cm.getUser().contentEquals(user))) {
-                System.out.println(cm.getMsg() + " CACHED MESSAGE PATTERN 2");
+                //t.println(cm.getMsg() + " CACHED MESSAGE PATTERN 2");
                 patternCount = 2;
             } else if ((patternCount == 2) && (cm.getMsg().contentEquals(pattern)) && (cm.getUser().contentEquals(user))) {
                 sendMessage(this.elements.configNode.getElementsByTagName("pyramidResponse").item(0).getTextContent());

@@ -53,7 +53,7 @@ public class ModerationHandler {
         for (;;) {
             try {
                 if (!filterCheck(msg).equals("no filter")) {
-                    System.out.println(reason);
+                    //System.out.println(reason);
                     sendMessage(".timeout " + username + " 600 " + reason);
                     return;
                 }
@@ -74,8 +74,8 @@ public class ModerationHandler {
     private boolean userCheck(String username){
         pattern = Pattern.compile(BANNED_USERNAME);
         matcher = pattern.matcher(username);
-        System.out.println(matcher.matches());
-        System.out.println(username);
+       // System.out.println(matcher.matches());
+        //System.out.println(username);
         return matcher.matches();
     }
 

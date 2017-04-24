@@ -63,17 +63,6 @@ public final class CommandParser {
             trailing = trailing.replaceAll("", "");
             trailing = trailing.replaceFirst("ACTION ", "");
         }
-        if (trailing.startsWith("!")) {
-            String cmd;
-            int cmdEnd = trailing.indexOf(" ");
-            if (cmdEnd == -1) {
-                trailing = trailing.toLowerCase();
-                System.out.println("TRAIL: " + trailing);
-            } else {
-                cmd = trailing.substring(trailing.indexOf("!"), trailing.indexOf(" "));
-                System.out.println(cmd + " COMMAND");
-            }
-        }
 
         //commandHandler.pyramidDetection(username, trailing);
         youtubeHandler.handleLinkRequest(trailing);
@@ -242,8 +231,8 @@ public final class CommandParser {
 
     static class checkConnection extends Thread {
 
-        long interval = 40000;
-        long initDelay = 4000;
+        long interval = 2000000;
+        long initDelay = 2000000;
         String site = "google.com";
         int port = 80;
         private final PrintStream outCheck;
@@ -268,6 +257,7 @@ public final class CommandParser {
             while (true) {
                 try {
                     sendJoin("Join #" + this.elements.configNode.getElementsByTagName("myChannel").item(0).getTextContent());
+                    sendJoin("PING");
                     Socket sock = new Socket();
                     InetSocketAddress addr = new InetSocketAddress(site, port);
                     sock.connect(addr, 3000);
@@ -313,7 +303,7 @@ public final class CommandParser {
 
             // This is a message from a user.
             // If it's the broadcaster, he/she is a mod.
-            LOGGER.info(msg);
+            //LOGGER.info(msg);
             if (msg.startsWith("@badges=broadcaster/1")) {
                 isMod = true;
             }
@@ -343,7 +333,7 @@ public final class CommandParser {
                 int usernameEnd = msg.indexOf("!", usernameStart);
                 if (usernameStart != -1 && usernameEnd != -1) {
                     username = msg.substring(usernameStart + 1, usernameEnd).toLowerCase();
-                    System.out.println(username + " USERNAME");
+                    //System.out.println(username + " USERNAME");
                 }
             }
 
@@ -382,6 +372,7 @@ public final class CommandParser {
             }
 
             msg = msg.substring(msgIndex + 1);
+            
 
             // Handle the message
             handleCommand(username, isMod, isSub, msg);

@@ -44,15 +44,10 @@ public final class TwitchBotX {
      * @throws IOException An exception thrown if connection is not established
      * or timed out.
      */
-    public boolean startConnectionTest(final Elements elements) throws IOException {
-        
+    public void startConnectionTest(final Elements elements) throws IOException {   
         CommandParser.checkConnection c = new CommandParser.checkConnection(elements, out);
         Thread check = new Thread(c);
         check.start();
-        if(!CommandParser.checkConnection.interrupted()){
-            return false;
-        }
-        return true;
     }
 
 
@@ -61,9 +56,9 @@ public final class TwitchBotX {
     *
     *
      */
-    public void beginListeningPubSub(final Elements elements, String url, int port) {
+   /* public void beginListeningPubSub(final Elements elements, String url, int port) {
         final PubSubHandler pubSub = new PubSubHandler(elements, out, url, port);
-    }
+    }*/
 
     /**
      * This method will begin reading for incoming messages from Twitch IRC API.
@@ -103,7 +98,7 @@ public final class TwitchBotX {
      */
     public void start() {
         try {
-            LOGGER.info("NecoBot for Twitch " + BOT_VERSION + " by Raxa");
+            LOGGER.info("kfbot for Twitch " + BOT_VERSION + " by Raxa");
 
             LOGGER.info("Reading configuration XML file");
             final Elements elements
@@ -126,16 +121,14 @@ public final class TwitchBotX {
             out.println("CAP REQ :twitch.tv/tags");
             out.println("CAP REQ :twitch.tv/commands");
             out.println("CAP REQ :twitch.tv/membership");
-            if(!startConnectionTest(elements)){
-                out.println("JOIN #" + config.joinedChannel);
-                out.println("PING");
-            }
+            startConnectionTest(elements);
+                
             
             // Begin connecting to and listening to Twitch PubSub 
             // whispers and stream is live function 
             // periodically sends connection updates through Ping/Pong
-            LOGGER.info("Attempt to start reading PUBSUB feed.");
-            beginListeningPubSub(elements, config.pubSub, config.port);
+            //LOGGER.info("Attempt to start reading PUBSUB feed.");
+           // beginListeningPubSub(elements, config.pubSub, config.port);
 
             final String ReadyMessage = "/me > " + BOT_VERSION + " has joined the channel.";
             out.println("PRIVMSG #"
