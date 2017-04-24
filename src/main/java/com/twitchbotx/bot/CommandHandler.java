@@ -77,7 +77,8 @@ public final class CommandHandler {
         "!count",
         "!filter-all",
         "!filter-add",
-        "!filter-delete",};
+        "!filter-delete",
+        "!filter-reason"};
 
     /**
      * A simple inner class for storing cached messages.
@@ -795,10 +796,21 @@ public final class CommandHandler {
 
     public void filterAdd(String msg, String user) {
         try {
-            String parameters = getInputParameter("!filter-add", msg, true);
-            int separator = parameters.indexOf(" ");
-            String filter = parameters.substring(0, separator);
-            String reason = parameters.substring(separator + 1);
+            String filter = "";
+            int filterNameStart = msg.indexOf("!fitler-add") + 13;
+            int filterNameEnd;
+            String reason;
+            if (msg.indexOf(" ", filterNameStart) == -1) {
+                filterNameEnd = msg.length();
+                filter = msg.substring(filterNameStart, filterNameEnd);
+                reason = "";
+            } else {
+                filterNameEnd = msg.indexOf(" ", filterNameStart);
+                filter = msg.substring(filterNameStart, filterNameEnd);
+                int reasonStart = msg.indexOf(" ", filterNameEnd) + 1;
+                int reasonEnd = (msg.length());
+                reason = msg.substring(reasonStart, reasonEnd);
+            }
             for (int i = 0; i < this.elements.filterNodes.getLength(); i++) {
                 Node n = this.elements.filterNodes.item(i);
                 Element e = (Element) n;
@@ -833,6 +845,39 @@ public final class CommandHandler {
                 }
             }
 
+            sendWhisper(".w " + user + " Filter not found.");
+        } catch (IllegalArgumentException e) {
+            LOGGER.info(e.toString());
+        }
+    }
+
+    public void filterReason(String msg, String user) {
+        try {
+            String filterName = "";
+            int filterNameStart = msg.indexOf("!fitler-add") + 16;
+            int filterNameEnd;
+            String reason;
+            if (msg.indexOf(" ", filterNameStart) == -1) {
+                filterNameEnd = msg.length();
+                filterName = msg.substring(filterNameStart, filterNameEnd);
+                reason = "";
+            } else {
+                filterNameEnd = msg.indexOf(" ", filterNameStart);
+                filterName = msg.substring(filterNameStart, filterNameEnd);
+                int reasonStart = msg.indexOf(" ", filterNameEnd) + 1;
+                int reasonEnd = (msg.length());
+                reason = msg.substring(reasonStart, reasonEnd);
+            }
+            for (int i = 0; i < this.elements.filterNodes.getLength(); i++) {
+                Node n = this.elements.filterNodes.item(i);
+                Element e = (Element) n;
+                if (filterName.contentEquals(e.getAttribute("name"))) {
+                    e.setAttribute("reason", reason);
+                    writeXML();
+                    sendWhisper(".w " + user + " Filter reason updated.");
+                    return;
+                }
+            }
             sendWhisper(".w " + user + " Filter not found.");
         } catch (IllegalArgumentException e) {
             LOGGER.info(e.toString());
@@ -876,7 +921,7 @@ public final class CommandHandler {
             return false;
         }
         if ((auth.contains("+m ")) && mod) {
-           // LOGGER.info("MOD TRUE: ");
+            // LOGGER.info("MOD TRUE: ");
             return true;
         }
         if ((auth.contains("-s ")) && sub) {
@@ -1056,6 +1101,7 @@ public final class CommandHandler {
             }
             return "";
         }
+
         return input.substring(cmd.length() + 1);
     }
 }

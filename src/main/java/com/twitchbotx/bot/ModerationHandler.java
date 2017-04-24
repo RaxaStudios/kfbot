@@ -6,6 +6,8 @@
 package com.twitchbotx.bot;
 
 import java.io.PrintStream;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -51,13 +53,15 @@ public class ModerationHandler {
 
     public void handleTool(String username, String msg) {
         for (;;) {
+            Calendar cal = Calendar.getInstance();
+            SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss");
+            System.out.println(sdf.format(cal.getTime()) + " " + username + ": " + msg);
             try {
                 if (!filterCheck(msg).equals("no filter")) {
                     //System.out.println(reason);
                     sendMessage(".timeout " + username + " 600 " + reason);
                     return;
-                }
-                else if(userCheck(username)){
+                } else if (userCheck(username)) {
                     sendMessage(".timeout " + username + " 600 Username caught by filter");
                     return;
                 }
@@ -70,11 +74,11 @@ public class ModerationHandler {
         }
 
     }
-    
-    private boolean userCheck(String username){
+
+    private boolean userCheck(String username) {
         pattern = Pattern.compile(BANNED_USERNAME);
         matcher = pattern.matcher(username);
-       // System.out.println(matcher.matches());
+        // System.out.println(matcher.matches());
         //System.out.println(username);
         return matcher.matches();
     }

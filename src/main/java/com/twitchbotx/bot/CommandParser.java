@@ -176,6 +176,12 @@ public final class CommandParser {
             }
         }
 
+        if (trailing.startsWith("!filter-reason")) {
+            if (commandHandler.checkAuthorization("!filter-reason", username, mod, sub)) {
+                commandHandler.filterReason(trailing, username);
+            }
+        }
+        
         if (trailing.startsWith("!set-msgCache")) {
             if (commandHandler.checkAuthorization("!set-msgCache", username, mod, sub)) {
                 commandHandler.setMsgCacheSize(trailing);
