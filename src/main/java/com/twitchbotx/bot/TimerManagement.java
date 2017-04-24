@@ -1,8 +1,6 @@
 package com.twitchbotx.bot;
 
 import java.io.PrintStream;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.logging.Logger;
 import org.w3c.dom.Element;
 
@@ -16,11 +14,11 @@ import org.w3c.dom.Element;
 /**
  * This class is responsible for timer management.
  */
-public final class TimerManagement {
+public final class TimerManagement extends Thread {
 
-    private final PrintStream outstream;
+
     private final ConfigParser.Elements elements;
-    private static final Logger LOGGER = Logger.getLogger(TwitchBotX.class.getSimpleName());
+
 
     /*
 ** This takes the information parsed in the start of the program under 
@@ -31,10 +29,9 @@ public final class TimerManagement {
     public TimerManagement(final ConfigParser.Elements elements,
             final PrintStream stream) {
         this.elements = elements;
-        this.outstream = stream;
     }
 
-    public void setupPeriodicBroadcast(final ConfigParser.Elements repeating) {
+    public void setupPeriodicBroadcast(final ConfigParser.Elements repeating, final PrintStream stream) {
 
         ConfigParser.Elements ce = (ConfigParser.Elements) repeating;
         for (int i = 0; i < elements.commandNodes.getLength(); i++) {
@@ -46,53 +43,31 @@ public final class TimerManagement {
                 if (l < 60000L) {
                     System.out.println("Repeating interval too short for command " + ca.getAttribute("name"));
                 } else {
-                    new Timer().schedule(new rTimer(ca.getTextContent(), l), d);
-
+                    rTimer t = new rTimer(ca.getTextContent(), l, elements, stream, d);
+                    Thread r = new Thread(t);
+                    r.start();
+                    System.out.println("Starting repeating command " + ca.getTextContent());
                 }
             }
         }
     }
 
-    static class rTimer
-            extends TimerTask implements Runnable {
+    static class rTimer extends Thread {
+        
+        private final PrintStream outstream;
+        private final ConfigParser.Elements elements;
+        private static final Logger LOGGER = Logger.getLogger(TwitchBotX.class.getSimpleName());
 
         String message;
         long repeatingTimer;
+        long initialDelay;
 
-        public rTimer(String msg, long timer) {
+        public rTimer(String msg, long timer, final ConfigParser.Elements elements, final PrintStream stream, long delay) {
             this.message = msg;
             this.repeatingTimer = timer;
-        }
-
-        @Override
-        public void run() {
-            new Timer().schedule(new rTimer(this.message, this.repeatingTimer), this.repeatingTimer);
-            /*sendTimer sendMessage = new sendTimer(this.message);*/
-            //sendMessage.run();
-            /*sendMessage(this.message);*/
-
-            System.out.println("Starting repeating commands" + this.message);
-        }
-    }
-
-    /**
-     * This command will send a message out to a specific Twitch channel.
-     *
-     * It will also wrap the message in pretty text (> /me) before sending it
-     * out.
-     *
-     * @param msg The message to be sent out to the channel
-     */
-    static class sendTimer implements Runnable {
-
-        private final PrintStream outstream;
-        private final ConfigParser.Elements elements;
-        String msg1;
-
-        public sendTimer(String message1) {
-            this.msg1 = message1;
-            this.outstream = null;
-            this.elements = null;
+            this.elements = elements;
+            this.outstream = stream;
+            this.initialDelay = delay;
         }
 
         private void sendMessage(final String msg) {
@@ -104,17 +79,23 @@ public final class TimerManagement {
                     + message);
         }
 
+        @Override
         public void run() {
-
+            if (initialDelay != 0) {
+                try {
+                    Thread.sleep(initialDelay);
+                } catch (InterruptedException e) {
+                    LOGGER.severe("CAUGHT AT TIMER DELAY: " + e);
+                }
+            } 
+            while (true) {
+                sendMessage(this.message);
+                try {
+                    Thread.sleep(repeatingTimer);
+                } catch (InterruptedException e) {
+                    LOGGER.severe("ERROR: " + e);
+                }
+            }
         }
-    }
-
-    private void sendMessage(final String msg) {
-        final String message = "/me > " + msg;
-        this.outstream.println("PRIVMSG #"
-                + this.elements.configNode.getElementsByTagName("myChannel").item(0).getTextContent()
-                + " "
-                + ":"
-                + message);
     }
 }

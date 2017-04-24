@@ -1,6 +1,9 @@
 package com.twitchbotx.bot;
 
+import java.io.IOException;
 import java.io.PrintStream;
+import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 
@@ -237,6 +240,52 @@ public final class CommandParser {
         commandHandler.parseForUserCommands(trailing, username, mod, sub);
     }
 
+    static class checkConnection extends Thread {
+
+        long interval = 40000;
+        long initDelay = 4000;
+        String site = "google.com";
+        int port = 80;
+        private final PrintStream outCheck;
+        private final ConfigParser.Elements elements;
+
+        public checkConnection(final ConfigParser.Elements elements, final PrintStream stream) {
+            this.outCheck = stream;
+            this.elements = elements;
+        }
+
+        private void sendJoin(final String msg) {
+            this.outCheck.println(msg);
+        }
+
+        public void run() {
+
+            try {
+                Thread.sleep(initDelay);
+            } catch (InterruptedException e) {
+                LOGGER.severe("ERROR CHECKING CONNECTION: " + e);
+            }
+            while (true) {
+                try {
+                    sendJoin("Join #" + this.elements.configNode.getElementsByTagName("myChannel").item(0).getTextContent());
+                    Socket sock = new Socket();
+                    InetSocketAddress addr = new InetSocketAddress(site, port);
+                    sock.connect(addr, 3000);
+                    LOGGER.info("connected to google.com without issue");
+                } catch (IOException e) {
+                    sendJoin("Join #" + this.elements.configNode.getElementsByTagName("myChannel").item(0).getTextContent());
+                    LOGGER.severe("Attemping to reconnect to Twitch chat: " + e);
+                }
+                try {
+                    Thread.sleep(interval);
+                } catch (InterruptedException e) {
+                    LOGGER.severe("Could not connect: " + e);
+                    LOGGER.severe("Please restart app");
+                }
+            }
+        }
+    }
+
     /**
      * This method parses all incoming messages from Twitch IRC.
      *
@@ -282,7 +331,6 @@ public final class CommandParser {
             }
 
             // Find the username
-           
             // User-id search for V5 switch
             /*if (msg.contains("user-id=")){
                 int usernameStart = msg.indexOf("user-id=", msg.indexOf(";"));
@@ -290,8 +338,7 @@ public final class CommandParser {
             username = msg.substring(msg.indexOf("user-id=") + 8, msg.indexOf(";", msg.indexOf("user-id=")));
             System.out.println(username + " USERNAME");
             }*/
-            
-            if (msg.contains("user-type=")){
+            if (msg.contains("user-type=")) {
                 int usernameStart = msg.indexOf(":", msg.indexOf("user-type="));
                 int usernameEnd = msg.indexOf("!", usernameStart);
                 if (usernameStart != -1 && usernameEnd != -1) {

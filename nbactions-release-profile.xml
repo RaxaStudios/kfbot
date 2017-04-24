@@ -10,12 +10,10 @@
             <goal>org.codehaus.mojo:exec-maven-plugin:1.2.1:exec</goal>
         </goals>
         <properties>
-            <manifest>
-                <addClasspath>true</addClasspath>
-            </manifest>
+            
             <exec.args>-classpath %classpath com.twitchbotx.bot.TwitchBotX</exec.args>
             <exec.executable>java</exec.executable>
-            <exec.workingdir></exec.workingdir>
+            
         </properties>
     </action>
     <action>
@@ -31,7 +29,7 @@
             <exec.args>-Xdebug -Xrunjdwp:transport=dt_socket,server=n,address=${jpda.address} -classpath %classpath com.twitchbotx.bot.TwitchBotX</exec.args>
             <exec.executable>java</exec.executable>
             <jpda.listen>true</jpda.listen>
-            <exec.workingdir></exec.workingdir>
+            
         </properties>
     </action>
     <action>
@@ -46,7 +44,7 @@
         <properties>
             <exec.args>-classpath %classpath com.twitchbotx.bot.TwitchBotX</exec.args>
             <exec.executable>java</exec.executable>
-            <exec.workingdir></exec.workingdir>
+            
         </properties>
     </action>
 </actions>

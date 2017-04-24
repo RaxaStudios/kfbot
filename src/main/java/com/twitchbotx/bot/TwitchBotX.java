@@ -44,10 +44,25 @@ public final class TwitchBotX {
      * @throws IOException An exception thrown if connection is not established
      * or timed out.
      */
-    public Socket establishConnection(final String host, final int port) throws IOException {
-        final Socket socket = new Socket(host, port);
+    public boolean startConnectionTest(final Elements elements) throws IOException {
+        
+        CommandParser.checkConnection c = new CommandParser.checkConnection(elements, out);
+        Thread check = new Thread(c);
+        check.start();
+        if(!CommandParser.checkConnection.interrupted()){
+            return false;
+        }
+        return true;
+    }
 
-        return socket;
+
+    /*
+    * This method begins listening for PubSub info notices 
+    *
+    *
+     */
+    public void beginListeningPubSub(final Elements elements, String url, int port) {
+        final PubSubHandler pubSub = new PubSubHandler(elements, out, url, port);
     }
 
     /**
@@ -77,7 +92,7 @@ public final class TwitchBotX {
      */
     public void startTimers(final Elements elements) {
         final TimerManagement timers = new TimerManagement(elements, out);
-        timers.setupPeriodicBroadcast(elements);
+        timers.setupPeriodicBroadcast(elements, out);
     }
 
     /**
@@ -97,7 +112,7 @@ public final class TwitchBotX {
             final Configuration config
                     = configParser.getConfiguration(elements.configNode);
 
-            LOGGER.info("Attempt to connect to Twitch servers.");
+            LOGGER.info("Attempt to connect to Twitch servers."); 
             final Socket socket = new Socket(config.host, config.port);
 
             out = new PrintStream(socket.getOutputStream());
@@ -110,14 +125,17 @@ public final class TwitchBotX {
             out.println("JOIN #" + config.joinedChannel);
             out.println("CAP REQ :twitch.tv/tags");
             out.println("CAP REQ :twitch.tv/commands");
-            
+            out.println("CAP REQ :twitch.tv/membership");
+            if(!startConnectionTest(elements)){
+                out.println("JOIN #" + config.joinedChannel);
+                out.println("PING");
+            }
             
             // Begin connecting to and listening to Twitch PubSub 
-            // whispers and stream is live function grabbed here
-            /*LOGGER.info("Attempt to start reading PUBSUB feed.");
-            PubSubHandler pubSub = new PubSubHandler();
-            final Socket pubS = new Socket(config.pubSub, config.port);*/
-            
+            // whispers and stream is live function 
+            // periodically sends connection updates through Ping/Pong
+            LOGGER.info("Attempt to start reading PUBSUB feed.");
+            beginListeningPubSub(elements, config.pubSub, config.port);
 
             final String ReadyMessage = "/me > " + BOT_VERSION + " has joined the channel.";
             out.println("PRIVMSG #"
@@ -128,9 +146,8 @@ public final class TwitchBotX {
             LOGGER.info("Bot is now ready for service.");
 
             // start all periodic timers for broadcasting events
-            // startTimers(elements);
-            
-            
+            startTimers(elements);
+
             // start doing a blocking read on the socket
             beginReadingMessages(elements);
         } catch (ParserConfigurationException | SAXException | IOException e) {
