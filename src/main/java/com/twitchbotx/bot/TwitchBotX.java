@@ -24,7 +24,7 @@ public final class TwitchBotX {
     private BufferedReader in;
     private String dataIn;
 
-    private static final String BOT_VERSION = "v1.09";
+    private static final String BOT_VERSION = "v1.10";
     private final ArrayList RecentMessages = new ArrayList();
 
     private final ConfigParser configParser = new ConfigParser();
@@ -44,7 +44,7 @@ public final class TwitchBotX {
      * @throws IOException An exception thrown if connection is not established
      * or timed out.
      */
-    public void startConnectionTest(final Elements elements) throws IOException {   
+    public void startConnectionTest(final Elements elements) throws IOException {
         CommandParser.checkConnection c = new CommandParser.checkConnection(elements, out);
         Thread check = new Thread(c);
         check.start();
@@ -56,10 +56,9 @@ public final class TwitchBotX {
     *
     *
      */
-   /* public void beginListeningPubSub(final Elements elements, String url, int port) {
+ /* public void beginListeningPubSub(final Elements elements, String url, int port) {
         final PubSubHandler pubSub = new PubSubHandler(elements, out, url, port);
     }*/
-
     /**
      * This method will begin reading for incoming messages from Twitch IRC API.
      *
@@ -107,7 +106,7 @@ public final class TwitchBotX {
             final Configuration config
                     = configParser.getConfiguration(elements.configNode);
 
-            LOGGER.info("Attempt to connect to Twitch servers."); 
+            LOGGER.info("Attempt to connect to Twitch servers.");
             final Socket socket = new Socket(config.host, config.port);
 
             out = new PrintStream(socket.getOutputStream());
@@ -122,14 +121,12 @@ public final class TwitchBotX {
             out.println("CAP REQ :twitch.tv/commands");
             out.println("CAP REQ :twitch.tv/membership");
             startConnectionTest(elements);
-                
-            
+
             // Begin connecting to and listening to Twitch PubSub 
             // whispers and stream is live function 
             // periodically sends connection updates through Ping/Pong
             //LOGGER.info("Attempt to start reading PUBSUB feed.");
-           // beginListeningPubSub(elements, config.pubSub, config.port);
-
+            // beginListeningPubSub(elements, config.pubSub, config.port);
             final String ReadyMessage = "/me > " + BOT_VERSION + " has joined the channel.";
             out.println("PRIVMSG #"
                     + elements.configNode.getElementsByTagName("myChannel").item(0).getTextContent()

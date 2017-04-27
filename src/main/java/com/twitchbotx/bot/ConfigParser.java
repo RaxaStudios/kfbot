@@ -30,9 +30,13 @@ public final class ConfigParser {
 
         public Element commands;
 
+        public Element subCommands;
+
         public Element counters;
 
         public NodeList commandNodes;
+
+        public NodeList subCommandNodes;
 
         public NodeList counterNodes;
 
@@ -60,7 +64,7 @@ public final class ConfigParser {
         public String host;
 
         public int port;
-        
+
         public String pubSub;
 
         @Override
@@ -102,7 +106,7 @@ public final class ConfigParser {
 
         configuration.clientID
                 = configNode.getElementsByTagName("botClientID").item(0).getTextContent();
-        
+
         configuration.pubSub = configNode.getElementsByTagName("pubSub").item(0).getTextContent();
 
         return configuration;
@@ -147,6 +151,8 @@ public final class ConfigParser {
 
         elements.commands = (Element) elements.doc.getElementsByTagName("commands").item(0);
         elements.commandNodes = elements.commands.getElementsByTagName("command");
+        elements.subCommands = (Element) elements.doc.getElementsByTagName("subcommands").item(0);
+        elements.subCommandNodes = elements.subCommands.getElementsByTagName("subcommand");
         elements.counters = (Element) elements.doc.getElementsByTagName("counters").item(0);
         elements.counterNodes = elements.counters.getElementsByTagName("counter");
         elements.filters = (Element) elements.doc.getElementsByTagName("filters").item(0);

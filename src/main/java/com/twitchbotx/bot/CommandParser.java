@@ -73,9 +73,9 @@ public final class CommandParser {
         }
 
         if (trailing.startsWith("!uptime")) {
-            LOGGER.log(Level.INFO, "{0} {1} {2}", new Object[]{username, mod, sub});
+            //LOGGER.log(Level.INFO, "{0} {1} {2}", new Object[]{username, mod, sub});
             if (commandHandler.checkAuthorization("!uptime", username, mod, sub)) {
-                commandHandler.uptime(trailing);
+                commandHandler.uptimeHandler();
             }
             return;
         }
@@ -87,9 +87,48 @@ public final class CommandParser {
             return;
         }
 
+        if (trailing.startsWith("!highlight")) {
+            if (commandHandler.checkAuthorization("!highlight", username, mod, sub)) {
+                commandHandler.highlight();
+            }
+            return;
+        }
+
+        if (trailing.startsWith("!command-add-sub")) {
+            if (commandHandler.checkAuthorization("!command-add-sub", username, mod, sub)) {
+                commandHandler.addSubCmd(trailing);
+                return;
+            }
+        }
+        if (trailing.startsWith("!command-edit-sub")) {
+            if (commandHandler.checkAuthorization("!command-edit-sub", username, mod, sub)) {
+                commandHandler.subEditCmd(trailing);
+                return;
+            }
+        }
+        if (trailing.startsWith("!command-delete-sub")) {
+            if (commandHandler.checkAuthorization("!command-delete-sub", username, mod, sub)) {
+                commandHandler.subDelCmd(trailing);
+                return;
+            }
+        }
+        if (trailing.startsWith("!command-cooldown-sub")) {
+            if (commandHandler.checkAuthorization("!command-cooldown-sub", username, mod, sub)) {
+                commandHandler.subCmdCooldown(trailing);
+                return;
+            }
+        }
+        if (trailing.startsWith("!command-auth-sub")) {
+            if (commandHandler.checkAuthorization("!command-auth-sub", username, mod, sub)) {
+                commandHandler.subAuthCmd(username, trailing);
+                return;
+            }
+        }
+
         if (trailing.startsWith("!commands")) {
             if (commandHandler.checkAuthorization("!commands", username, mod, sub)) {
                 commandHandler.commands(username, mod, sub);
+                return;
             }
         }
 
@@ -163,25 +202,29 @@ public final class CommandParser {
         if (trailing.startsWith("!filter-all")) {
             if (commandHandler.checkAuthorization("!filter-all", username, mod, sub)) {
                 commandHandler.filterAll(trailing, username);
+                return;
             }
         }
         if (trailing.startsWith("!filter-add")) {
             if (commandHandler.checkAuthorization("!filter-add", username, mod, sub)) {
                 commandHandler.filterAdd(trailing, username);
+                return;
             }
         }
         if (trailing.startsWith("!filter-delete")) {
             if (commandHandler.checkAuthorization("!filter-delete", username, mod, sub)) {
                 commandHandler.filterDel(trailing, username);
+                return;
             }
         }
 
         if (trailing.startsWith("!filter-reason")) {
             if (commandHandler.checkAuthorization("!filter-reason", username, mod, sub)) {
                 commandHandler.filterReason(trailing, username);
+                return;
             }
         }
-        
+
         if (trailing.startsWith("!set-msgCache")) {
             if (commandHandler.checkAuthorization("!set-msgCache", username, mod, sub)) {
                 commandHandler.setMsgCacheSize(trailing);
@@ -378,7 +421,6 @@ public final class CommandParser {
             }
 
             msg = msg.substring(msgIndex + 1);
-            
 
             // Handle the message
             handleCommand(username, isMod, isSub, msg);
