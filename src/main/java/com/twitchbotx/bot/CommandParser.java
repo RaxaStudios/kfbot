@@ -72,6 +72,10 @@ public final class CommandParser {
             return;
         }
 
+        if (trailing.indexOf(" ") == -1) {
+            trailing = trailing.toLowerCase();
+        }
+
         if (trailing.startsWith("!uptime")) {
             //LOGGER.log(Level.INFO, "{0} {1} {2}", new Object[]{username, mod, sub});
             if (commandHandler.checkAuthorization("!uptime", username, mod, sub)) {
@@ -115,6 +119,12 @@ public final class CommandParser {
         if (trailing.startsWith("!command-cooldown-sub")) {
             if (commandHandler.checkAuthorization("!command-cooldown-sub", username, mod, sub)) {
                 commandHandler.subCmdCooldown(trailing);
+                return;
+            }
+        }
+        if (trailing.startsWith("!command-sound-sub")) {
+            if (commandHandler.checkAuthorization("!command-sound-sub", username, mod, sub)) {
+                commandHandler.cmdSubSound(trailing);
                 return;
             }
         }
@@ -430,4 +440,18 @@ public final class CommandParser {
             LOGGER.log(Level.WARNING, "Error detected in parsing a message: throwing away message ", e.toString());
         }
     }
+
+    public String parserTest(String message) {
+        parse(message);
+        return message;
+    }
+
+}
+
+class parseTest {
+
+    public void parseTest(String message) {
+        System.out.println(message);
+    }
+
 }

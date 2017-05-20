@@ -17,7 +17,6 @@ import java.util.logging.Logger;
 public final class ConfigParser {
 
     private final static Logger LOGGER = Logger.getLogger(ConfigParser.class.getSimpleName());
-    private TimerManagement timerManagement;
 
     /**
      * An inner class that holds all the positions of all the elements.

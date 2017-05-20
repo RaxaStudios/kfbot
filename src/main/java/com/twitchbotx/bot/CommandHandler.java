@@ -28,6 +28,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import sun.audio.AudioPlayer;
 import sun.audio.AudioStream;
+import javax.sound.sampled.*;
 import java.time.LocalDate;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
@@ -686,6 +687,27 @@ public final class CommandHandler {
         }
     }
 
+        public void cmdSubSound(String msg) {
+        try {
+            String parameters = getInputParameter("!command-sound-sub", msg, true);
+            int separator = parameters.indexOf(" ");
+            String cmd = parameters.substring(0, separator);
+            cmd = cmd.toLowerCase();
+            String soundFile = parameters.substring(separator + 1);
+            if (soundFile.contentEquals("null")) {
+                soundFile = "";
+            }
+            if (setSubCmdXMLParam(cmd, "sound", soundFile, false)) {
+                sendMessage("Command [" + cmd + "] set to play sound file [" + soundFile + "]");
+            }
+        } catch (IllegalArgumentException e) {
+            sendMessage("Syntax: !command-sound-sub [!command] [filename.wav]");
+        }
+    }
+    
+    
+    
+    
     /*
 ** This creates the URL = api.twitch.tv/kraken with desired streamer name("myChannel") from kfbot1.0.xml
 ** Opens a connection, begins reading using BufferedReader brin, builds a String response based on API reply
@@ -1210,6 +1232,14 @@ public final class CommandHandler {
                 break;
             }
         }
+        for (int i = 0; i < this.elements.subCommandNodes.getLength(); i++) {
+            Node n = this.elements.subCommandNodes.item(i);
+            Element cmdXmlNode = (Element) n;
+            if (command.contentEquals(cmdXmlNode.getAttribute("name"))) {
+                auth = cmdXmlNode.getAttribute("auth");
+                break;
+            }
+        }
         if (auth.isEmpty()) {
             return false;
         }
@@ -1311,6 +1341,7 @@ public final class CommandHandler {
     private void playSound(String file) {
         try {
             InputStream is = new FileInputStream(file);
+            System.out.println(file);
             AudioStream audioStream = new AudioStream(is);
             AudioPlayer.player.start(audioStream);
         } catch (Exception e) {
