@@ -1,9 +1,10 @@
 package com.twitchbotx.bot;
 
-import java.io.IOException;
+import com.twitchbotx.bot.handlers.CommandHandler;
+import com.twitchbotx.bot.handlers.ModerationHandler;
+import com.twitchbotx.bot.handlers.YoutubeHandler;
+
 import java.io.PrintStream;
-import java.net.InetSocketAddress;
-import java.net.Socket;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 
@@ -28,12 +29,11 @@ public final class CommandParser {
 
     // A simple constructor for this class that takes in the XML elements
     // for quick modification
-    public CommandParser(final ConfigParser.Elements elements,
-            final PrintStream stream) {
-        this.commandHandler = new CommandHandler(elements, stream);
+    public CommandParser(final Datastore store, final PrintStream stream) {
+        this.commandHandler = new CommandHandler(store, stream);
+        this.youtubeHandler = new YoutubeHandler(store, stream);
+        this.moderationHandler = new ModerationHandler(store, stream);
         this.outstream = stream;
-        this.youtubeHandler = new YoutubeHandler(elements, stream);
-        this.moderationHandler = new ModerationHandler(elements, stream);
     }
 
     /**
@@ -47,21 +47,23 @@ public final class CommandParser {
      * @param sub A boolean field which indicates whether this is a subscriber
      * message.
      *
-     * @param command A command field for the command that was parsed from the
-     * message.
-     *
      * @param trailing The trailing message that accompany the command
-     *
-     * @param prefix A prefix for positioning where the username might reside
      */
-    private void handleCommand(
-            final String username,
-            final boolean mod,
-            final boolean sub,
-            String trailing) {
+    private void handleCommand(final String username, final boolean mod, final boolean sub, String trailing) {
         if (trailing.contains("")) {
             trailing = trailing.replaceAll("", "");
             trailing = trailing.replaceFirst("ACTION ", "");
+        }
+        if (trailing.startsWith("!")) {
+            String cmd;
+            int cmdEnd = trailing.indexOf(" ");
+            if (cmdEnd == -1) {
+                trailing = trailing.toLowerCase();
+                System.out.println("TRAIL: " + trailing);
+            } else {
+                cmd = trailing.substring(trailing.indexOf("!"), trailing.indexOf(" "));
+                System.out.println(cmd + " COMMAND");
+            }
         }
 
         //commandHandler.pyramidDetection(username, trailing);
@@ -73,12 +75,13 @@ public final class CommandParser {
         }
 
         if (trailing.startsWith("!uptime")) {
-            //LOGGER.log(Level.INFO, "{0} {1} {2}", new Object[]{username, mod, sub});
+            LOGGER.log(Level.INFO, "{0} {1} {2}", new Object[]{username, mod, sub});
             if (commandHandler.checkAuthorization("!uptime", username, mod, sub)) {
-                commandHandler.uptimeHandler();
+                commandHandler.uptime(trailing);
             }
             return;
         }
+
         if (trailing.startsWith("!followage")) {
             if (commandHandler.checkAuthorization("!followage", username, mod, sub)) {
                 String user = username.toLowerCase();
@@ -87,48 +90,9 @@ public final class CommandParser {
             return;
         }
 
-        if (trailing.startsWith("!highlight")) {
-            if (commandHandler.checkAuthorization("!highlight", username, mod, sub)) {
-                commandHandler.highlight();
-            }
-            return;
-        }
-
-        if (trailing.startsWith("!command-add-sub")) {
-            if (commandHandler.checkAuthorization("!command-add-sub", username, mod, sub)) {
-                commandHandler.addSubCmd(trailing);
-                return;
-            }
-        }
-        if (trailing.startsWith("!command-edit-sub")) {
-            if (commandHandler.checkAuthorization("!command-edit-sub", username, mod, sub)) {
-                commandHandler.subEditCmd(trailing);
-                return;
-            }
-        }
-        if (trailing.startsWith("!command-delete-sub")) {
-            if (commandHandler.checkAuthorization("!command-delete-sub", username, mod, sub)) {
-                commandHandler.subDelCmd(trailing);
-                return;
-            }
-        }
-        if (trailing.startsWith("!command-cooldown-sub")) {
-            if (commandHandler.checkAuthorization("!command-cooldown-sub", username, mod, sub)) {
-                commandHandler.subCmdCooldown(trailing);
-                return;
-            }
-        }
-        if (trailing.startsWith("!command-auth-sub")) {
-            if (commandHandler.checkAuthorization("!command-auth-sub", username, mod, sub)) {
-                commandHandler.subAuthCmd(username, trailing);
-                return;
-            }
-        }
-
         if (trailing.startsWith("!commands")) {
             if (commandHandler.checkAuthorization("!commands", username, mod, sub)) {
                 commandHandler.commands(username, mod, sub);
-                return;
             }
         }
 
@@ -202,26 +166,16 @@ public final class CommandParser {
         if (trailing.startsWith("!filter-all")) {
             if (commandHandler.checkAuthorization("!filter-all", username, mod, sub)) {
                 commandHandler.filterAll(trailing, username);
-                return;
             }
         }
         if (trailing.startsWith("!filter-add")) {
             if (commandHandler.checkAuthorization("!filter-add", username, mod, sub)) {
                 commandHandler.filterAdd(trailing, username);
-                return;
             }
         }
         if (trailing.startsWith("!filter-delete")) {
             if (commandHandler.checkAuthorization("!filter-delete", username, mod, sub)) {
                 commandHandler.filterDel(trailing, username);
-                return;
-            }
-        }
-
-        if (trailing.startsWith("!filter-reason")) {
-            if (commandHandler.checkAuthorization("!filter-reason", username, mod, sub)) {
-                commandHandler.filterReason(trailing, username);
-                return;
             }
         }
 
@@ -278,53 +232,6 @@ public final class CommandParser {
         commandHandler.parseForUserCommands(trailing, username, mod, sub);
     }
 
-    static class checkConnection extends Thread {
-
-        long interval = 2000000;
-        long initDelay = 2000000;
-        String site = "google.com";
-        int port = 80;
-        private final PrintStream outCheck;
-        private final ConfigParser.Elements elements;
-
-        public checkConnection(final ConfigParser.Elements elements, final PrintStream stream) {
-            this.outCheck = stream;
-            this.elements = elements;
-        }
-
-        private void sendJoin(final String msg) {
-            this.outCheck.println(msg);
-        }
-
-        public void run() {
-
-            try {
-                Thread.sleep(initDelay);
-            } catch (InterruptedException e) {
-                LOGGER.severe("ERROR CHECKING CONNECTION: " + e);
-            }
-            while (true) {
-                try {
-                    sendJoin("Join #" + this.elements.configNode.getElementsByTagName("myChannel").item(0).getTextContent());
-                    sendJoin("PING");
-                    Socket sock = new Socket();
-                    InetSocketAddress addr = new InetSocketAddress(site, port);
-                    sock.connect(addr, 3000);
-                    LOGGER.info("connected to google.com without issue");
-                } catch (IOException e) {
-                    sendJoin("Join #" + this.elements.configNode.getElementsByTagName("myChannel").item(0).getTextContent());
-                    LOGGER.severe("Attemping to reconnect to Twitch chat: " + e);
-                }
-                try {
-                    Thread.sleep(interval);
-                } catch (InterruptedException e) {
-                    LOGGER.severe("Could not connect: " + e);
-                    LOGGER.severe("Please restart app");
-                }
-            }
-        }
-    }
-
     /**
      * This method parses all incoming messages from Twitch IRC.
      *
@@ -352,7 +259,7 @@ public final class CommandParser {
 
             // This is a message from a user.
             // If it's the broadcaster, he/she is a mod.
-            //LOGGER.info(msg);
+            LOGGER.info(msg);
             if (msg.startsWith("@badges=broadcaster/1")) {
                 isMod = true;
             }
@@ -370,6 +277,7 @@ public final class CommandParser {
             }
 
             // Find the username
+           
             // User-id search for V5 switch
             /*if (msg.contains("user-id=")){
                 int usernameStart = msg.indexOf("user-id=", msg.indexOf(";"));
@@ -377,12 +285,13 @@ public final class CommandParser {
             username = msg.substring(msg.indexOf("user-id=") + 8, msg.indexOf(";", msg.indexOf("user-id=")));
             System.out.println(username + " USERNAME");
             }*/
-            if (msg.contains("user-type=")) {
+            
+            if (msg.contains("user-type=")){
                 int usernameStart = msg.indexOf(":", msg.indexOf("user-type="));
                 int usernameEnd = msg.indexOf("!", usernameStart);
                 if (usernameStart != -1 && usernameEnd != -1) {
                     username = msg.substring(usernameStart + 1, usernameEnd).toLowerCase();
-                    //System.out.println(username + " USERNAME");
+                    System.out.println(username + " USERNAME");
                 }
             }
 

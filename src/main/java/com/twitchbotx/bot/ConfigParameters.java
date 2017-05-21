@@ -14,36 +14,29 @@ import java.util.logging.Logger;
 /**
  * This class acts as a parser for the configuration file.
  */
-public final class ConfigParser {
+public final class ConfigParameters {
 
-    private final static Logger LOGGER = Logger.getLogger(ConfigParser.class.getSimpleName());
-    private TimerManagement timerManagement;
+    private final static Logger LOGGER = Logger.getLogger(ConfigParameters.class.getSimpleName());
 
     /**
      * An inner class that holds all the positions of all the elements.
      */
-    public final class Elements {
-
+    public final static class Elements {
         public Document doc;
 
         public Element configNode;
 
         public Element commands;
 
-        public Element subCommands;
-
         public Element counters;
 
         public NodeList commandNodes;
-
-        public NodeList subCommandNodes;
 
         public NodeList counterNodes;
 
         public Element filters;
 
         public NodeList filterNodes;
-
     }
 
     /**
@@ -51,8 +44,7 @@ public final class ConfigParser {
      * change once the bot is up, and nobody should be changing them live
      * anyway.
      */
-    public final class Configuration {
-
+    public final static class Configuration {
         public String account;
 
         public String clientID;
@@ -64,52 +56,107 @@ public final class ConfigParser {
         public String host;
 
         public int port;
-
+        
         public String pubSub;
+
+        public String youtubeApi;
+
+        public String youtubeTitle;
 
         @Override
         public String toString() {
-            return "Configuration{"
-                    + "account=" + account
-                    + ", password=" + password
-                    + ", joinedChannel=" + joinedChannel
-                    + ", host=" + host
-                    + ", clientID=" + clientID
-                    + ", port=" + port + '}';
+            return "Configuration{" +
+                    "account='" + account + '\'' +
+                    ", clientID='" + clientID + '\'' +
+                    ", password='" + password + '\'' +
+                    ", joinedChannel='" + joinedChannel + '\'' +
+                    ", host='" + host + '\'' +
+                    ", port=" + port +
+                    ", pubSub='" + pubSub + '\'' +
+                    ", youtubeApi='" + youtubeApi + '\'' +
+                    ", youtubeTitle='" + youtubeTitle + '\'' +
+                    '}';
         }
     }
 
     /**
-     * This method parses the configuration and pulls information
-     *
-     * @param configNode An XML element for positioning the config node of the
-     * XML file
-     *
-     * @return A class of configurations for unchanged configuration
+     * Represents a single Command
      */
-    public Configuration getConfiguration(final Element configNode) {
-        final Configuration configuration = new Configuration();
-        configuration.account
-                = configNode.getElementsByTagName("botAccount").item(0).getTextContent();
+    public final static class Command {
 
-        configuration.password
-                = configNode.getElementsByTagName("botOAUTH").item(0).getTextContent();
+        // A long string that signifies who has the credentials to use this command
+        public String authentication;
 
-        configuration.joinedChannel
-                = configNode.getElementsByTagName("myChannel").item(0).getTextContent();
+        // A command name
+        public String name;
 
-        configuration.host
-                = configNode.getElementsByTagName("irc").item(0).getTextContent();
+        // No clue what this is used for
+        public String cdUntil;
 
-        configuration.port
-                = Integer.parseInt(configNode.getElementsByTagName("ircPort").item(0).getTextContent());
+        // Time in seconds for cooldown
+        public String cooldownInSec;
 
-        configuration.clientID
-                = configNode.getElementsByTagName("botClientID").item(0).getTextContent();
+        // Flag for whenever this command is enabled/disabled
+        public String disabled;
 
-        configuration.pubSub = configNode.getElementsByTagName("pubSub").item(0).getTextContent();
+        // No clue what this is used for
+        public String initialDelay;
 
-        return configuration;
+        // No clue what this is used for
+        public String interval;
+
+        // No clue what this is used for
+        public String repeating;
+
+        // The sound to play when command is used?
+        public String sound;
+
+        // The text to display when this command is hit
+        public String text;
+
+        @Override
+        public String toString() {
+            return "Command{" +
+                    "authentication='" + authentication + '\'' +
+                    ", name='" + name + '\'' +
+                    '}';
+        }
+    }
+
+    /**
+     * Represents a single counter, for counting a list of items
+     */
+    public final static class Counter {
+        // The name of the counter
+        public String name;
+
+        // The current count
+        public int count;
+
+        @Override
+        public String toString() {
+            return "Counter{" +
+                    "name='" + name + '\'' +
+                    ", count=" + count +
+                    '}';
+        }
+    }
+
+    /**
+     * Represents a single filter, for counting a single filter
+     */
+    public final static class Filter {
+        public String name;
+
+        public String reason;
+
+        @Override
+        public String toString() {
+            return "Filter{" +
+                    "name='" + name + '\'' +
+                    ", reason='" + reason + '\'' +
+                    '}';
+        }
     }
 
     /**
@@ -146,13 +193,9 @@ public final class ConfigParser {
 
         LOGGER.info("Completed reading the XML file");
 
-        elements.configNode
-                = (Element) elements.doc.getElementsByTagName("config").item(0);
-
+        elements.configNode = (Element) elements.doc.getElementsByTagName("config").item(0);
         elements.commands = (Element) elements.doc.getElementsByTagName("commands").item(0);
         elements.commandNodes = elements.commands.getElementsByTagName("command");
-        elements.subCommands = (Element) elements.doc.getElementsByTagName("subcommands").item(0);
-        elements.subCommandNodes = elements.subCommands.getElementsByTagName("subcommand");
         elements.counters = (Element) elements.doc.getElementsByTagName("counters").item(0);
         elements.counterNodes = elements.counters.getElementsByTagName("counter");
         elements.filters = (Element) elements.doc.getElementsByTagName("filters").item(0);

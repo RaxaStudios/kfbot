@@ -1,4 +1,7 @@
-package com.twitchbotx.bot;
+package com.twitchbotx.bot.handlers;
+
+import com.twitchbotx.bot.ConfigParameters;
+import com.twitchbotx.bot.Datastore;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -18,26 +21,26 @@ public final class YoutubeHandler {
     
     private final PrintStream outstream;
     private static final Logger LOGGER = Logger.getLogger(YoutubeHandler.class.getSimpleName());
-    private final ConfigParser.Elements elements;
+    private final Datastore store;
 
 
-    public YoutubeHandler(final ConfigParser.Elements elements,
+    public YoutubeHandler(final Datastore store,
             final PrintStream stream) {
-        this.elements = elements;
+        this.store = store;
         this.outstream = stream;
     }
 
     /**
      * This method sets youtube URL, reads, and sends out title
      *
-     * @param url
+     * @param request
      *
      */
-    private void getYoutubeTitle(String request) {
+    private void getYoutubeTitle(final String request) {
         try {
-            String ytAPI = this.elements.configNode.getElementsByTagName("youtubeTitle").item(0).getTextContent();
+            String ytAPI = store.getConfiguration().youtubeApi;
             ytAPI = ytAPI.replaceAll("#id", "&id=" + request);
-            ytAPI = ytAPI.replaceAll("#key", "&key=" + this.elements.configNode.getElementsByTagName("youtubeAPI").item(0).getTextContent());
+            ytAPI = ytAPI.replaceAll("#key", "&key=" + store.getConfiguration().youtubeTitle);
             URL url = new URL(ytAPI);
             URLConnection con = (URLConnection) url.openConnection();
             BufferedReader bufReader = new BufferedReader(new InputStreamReader(con.getInputStream()));
@@ -72,15 +75,12 @@ public final class YoutubeHandler {
 
         for (;;) {
             try {
-
                 if (msg.contains("youtube.com")) {
-
                     int startToken = msg.indexOf("youtube.com") + 20;
                     int endToken = msg.indexOf("v=") + 13;
                     String ytId = msg.substring(startToken, endToken);
                     getYoutubeTitle(ytId);
                 } else if (msg.contains("youtu.be")) {
-
                     int startToken = msg.indexOf("youtu.be") + 9;
                     int endToken = msg.lastIndexOf("/") + 12;
                     String ytId = msg.substring(startToken, endToken);
@@ -89,12 +89,9 @@ public final class YoutubeHandler {
                     return;
                 }
                 return;
-
             } catch (Exception e) {
                 LOGGER.severe(e.toString());
                 return;
-
-            } finally {
             }
         }
     }
@@ -110,7 +107,7 @@ public final class YoutubeHandler {
     private void sendMessage(final String msg) {
         final String message = "/me > " + msg;
         this.outstream.println("PRIVMSG #"
-                + this.elements.configNode.getElementsByTagName("myChannel").item(0).getTextContent()
+                + this.store.getConfiguration().joinedChannel
                 + " "
                 + ":"
                 + message);
