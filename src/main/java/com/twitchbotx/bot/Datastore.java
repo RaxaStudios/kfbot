@@ -18,7 +18,7 @@ public interface Datastore {
      * @return
      * A list of commands
      */
-    List<String> getCommands();
+    List<ConfigParameters.Command> getCommands();
 
     /**
      * This method is used to get a list of filters.
@@ -26,7 +26,7 @@ public interface Datastore {
      * @return
      * A list of filters
      */
-    List<String> getFilters();
+    List<ConfigParameters.Filter> getFilters();
 
     /**
      * This method is used to get a list of counters.
@@ -34,7 +34,7 @@ public interface Datastore {
      * @return
      * A list of counters
      */
-    List<String> getCounters();
+    List<ConfigParameters.Counter> getCounters();
 
     /**
      * This method updates a list of existing commands.

@@ -24,23 +24,29 @@ public class ModerationHandler {
     private final PrintStream outstream;
     private final Datastore store;
     private String reason;
-    private Pattern pattern;
-    private Matcher matcher;
     private static final String BANNED_USERNAME = "(\\d{7}([A-z]{1})\\d{7}|\\d{14})";
 
-    public ModerationHandler(final Datastore store,
-            final PrintStream stream) {
+    /**
+     * Constructor for the handler
+     *
+     * @param store
+     * The database access utility for reading/writing to the database
+     *
+     * @param stream
+     * The outsteam to communicate to twitch
+     */
+    public ModerationHandler(final Datastore store, final PrintStream stream) {
         this.store = store;
         this.outstream = stream;
     }
 
     public String filterCheck(String msg) {
-        for (int i = 0; i < elements.filterNodes.getLength(); i++) {
-            Element ca = (Element) elements.filterNodes.item(i);
-            if (!Boolean.parseBoolean(ca.getAttribute("disabled"))) {
-                String filter = ca.getAttribute("name");
-                reason = ca.getAttribute("reason");
-                if (msg.contains(filter)) {
+        for (int i = 0; i < store.getFilters().size(); i++) {
+            final ConfigParameters.Filter filter = store.getFilters().get(i);
+            if (!filter.disabled) {
+                String filterName = filter.name;
+                reason = filter.reason;
+                if (msg.contains(filterName)) {
                     return reason;
                 }
             } else {
@@ -72,15 +78,15 @@ public class ModerationHandler {
     }
     
     private boolean userCheck(String username){
-        pattern = Pattern.compile(BANNED_USERNAME);
-        matcher = pattern.matcher(username);
+        final Pattern pattern = Pattern.compile(BANNED_USERNAME);
+        final Matcher matcher = pattern.matcher(username);
         return matcher.matches();
     }
 
     private void sendMessage(final String msg) {
         final String message = msg;
         this.outstream.println("PRIVMSG #"
-                + this.elements.configNode.getElementsByTagName("myChannel").item(0).getTextContent()
+                + store.getConfiguration().joinedChannel
                 + " "
                 + ":"
                 + message);

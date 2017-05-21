@@ -106,8 +106,8 @@ public final class YoutubeHandler {
      */
     private void sendMessage(final String msg) {
         final String message = "/me > " + msg;
-        this.outstream.println("PRIVMSG #"
-                + this.store.getConfiguration().joinedChannel
+        outstream.println("PRIVMSG #"
+                + store.getConfiguration().joinedChannel
                 + " "
                 + ":"
                 + message);

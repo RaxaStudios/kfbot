@@ -119,6 +119,14 @@ public final class ConfigParameters {
             return "Command{" +
                     "authentication='" + authentication + '\'' +
                     ", name='" + name + '\'' +
+                    ", cdUntil='" + cdUntil + '\'' +
+                    ", cooldownInSec='" + cooldownInSec + '\'' +
+                    ", disabled='" + disabled + '\'' +
+                    ", initialDelay='" + initialDelay + '\'' +
+                    ", interval='" + interval + '\'' +
+                    ", repeating='" + repeating + '\'' +
+                    ", sound='" + sound + '\'' +
+                    ", text='" + text + '\'' +
                     '}';
         }
     }
@@ -146,6 +154,9 @@ public final class ConfigParameters {
      * Represents a single filter, for counting a single filter
      */
     public final static class Filter {
+
+        public boolean disabled;
+
         public String name;
 
         public String reason;
@@ -153,7 +164,8 @@ public final class ConfigParameters {
         @Override
         public String toString() {
             return "Filter{" +
-                    "name='" + name + '\'' +
+                    "disabled='" + disabled + '\'' +
+                    ", name='" + name + '\'' +
                     ", reason='" + reason + '\'' +
                     '}';
         }

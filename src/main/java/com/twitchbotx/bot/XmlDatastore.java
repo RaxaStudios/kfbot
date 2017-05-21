@@ -53,17 +53,17 @@ public final class XmlDatastore implements Datastore {
     }
 
     @Override
-    public List<String> getCommands() {
+    public List<ConfigParameters.Command> getCommands() {
         return null;
     }
 
     @Override
-    public List<String> getFilters() {
+    public List<ConfigParameters.Filter> getFilters() {
         return null;
     }
 
     @Override
-    public List<String> getCounters() {
+    public List<ConfigParameters.Counter> getCounters() {
         return null;
     }
 
