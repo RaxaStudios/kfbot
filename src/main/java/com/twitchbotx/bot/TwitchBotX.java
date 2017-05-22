@@ -22,7 +22,7 @@ public final class TwitchBotX {
     private BufferedReader in;
     private String dataIn;
 
-    private static final String BOT_VERSION = "v1.09";
+    private static final String BOT_VERSION = "v1.10";
 
     private final ConfigParameters configuration = new ConfigParameters();
 

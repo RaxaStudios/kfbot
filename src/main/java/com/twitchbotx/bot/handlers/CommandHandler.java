@@ -23,6 +23,7 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
+import com.twitchbotx.bot.ConfigParameters;
 import com.twitchbotx.bot.Datastore;
 import com.twitchbotx.bot.TwitchBotX;
 import org.w3c.dom.DOMException;
@@ -125,12 +126,8 @@ public final class CommandHandler {
     }
 
 
-    public void parseForUserCommands(String msg,
-            String username,
-            boolean mod,
-            boolean sub) {
-
-        for (int i = 0; i < this.elements.commandNodes.getLength(); i++) {
+    public void parseForUserCommands(String msg, String username, boolean mod, boolean sub) {
+        for (int i = 0; i < store.getCommands().size(); i++) {
             try {
                 Node n = this.elements.commandNodes.item(i);
                 Element e = (Element) n;
@@ -158,7 +155,7 @@ public final class CommandHandler {
                         sendMessage(cmd + " requires a parameter.");
                         return;
                     }
-                    if (!username.contentEquals(this.elements.configNode.getElementsByTagName("myChannel").item(0).getTextContent())) {
+                    if (!username.contentEquals(store.getConfiguration().joinedChannel)) {
                         Calendar calendar = Calendar.getInstance();
                         Date now = calendar.getTime();
                         Date cdTime = new Date(0L);
@@ -197,7 +194,7 @@ public final class CommandHandler {
                 sendMessage("Failed: [" + cmd + "] is a reserved command.");
                 return;
             }
-            for (int i = 0; i < this.elements.commandNodes.getLength(); i++) {
+            for (int i = 0; i < store.getCommands().size(); i++) {
                 Node n = this.elements.commandNodes.item(i);
                 Element e = (Element) n;
                 if (cmd.contentEquals(e.getAttribute("name"))) {
@@ -242,7 +239,7 @@ public final class CommandHandler {
             sendMessage("Failed: [" + cmd + "] is a reserved command.");
             return;
         }
-        for (int i = 0; i < this.elements.commandNodes.getLength(); i++) {
+        for (int i = 0; i < store.getCommands().size(); i++) {
             Node n = this.elements.commandNodes.item(i);
             Element e = (Element) n;
             if (cmd.contentEquals(e.getAttribute("name"))) {
@@ -273,7 +270,7 @@ public final class CommandHandler {
                 sendMessage("Failed: [" + cmd + "] is a reserved command.");
                 return;
             }
-            for (int i = 0; i < this.elements.commandNodes.getLength(); i++) {
+            for (int i = 0; i < store.getCommands().size(); i++) {
                 Node n = this.elements.commandNodes.item(i);
                 Element e = (Element) n;
                 if (cmd.contentEquals(e.getAttribute("name"))) {
@@ -305,7 +302,7 @@ public final class CommandHandler {
             String cmd = parameters.substring(0, separator);
             String auth = parameters.substring(separator + 1) + " ";
             if (isReservedCommand(cmd)) {
-                if (!username.contentEquals(this.elements.configNode.getElementsByTagName("myChannel").item(0).getTextContent())) {
+                if (!username.contentEquals(store.getConfiguration().joinedChannel) {
                     sendMessage("Failed: only the channel owner can edit the auth for reserved commands.");
                     return;
                 }
@@ -426,22 +423,23 @@ public final class CommandHandler {
         }
     }
 
-    /*
-** This creates the URL = api.twitch.tv/kraken with desired streamer name("myChannel") from kfbot1.0.xml
-** Opens a connection, begins reading using BufferedReader brin, builds a String response based on API reply
-** Once response is done building, checks for "stream\:null" response - this means stream is not live
-** Creates Strings to hold content placed between int "bi" and int "ei" as per their defined index
-** 
+    /**
+     * This creates the URL = api.twitch.tv/kraken with desired streamer name("myChannel") from kfbot1.0.xml
+     * Opens a connection, begins reading using BufferedReader brin, builds a String response based on API reply
+     * nce response is done building, checks for "stream\:null" response - this means stream is not live
+     * Creates Strings to hold content placed between int "bi" and int "ei" as per their defined index
+     *
+     * @param msg
      */
     public void uptime(String msg) {
         try {
-            String statusURL = this.elements.configNode.getElementsByTagName("twitchStreamerStatus").item(0).getTextContent();
-            statusURL = statusURL.replaceAll("#streamer", this.elements.configNode.getElementsByTagName("myChannel").item(0).getTextContent());
+            String statusURL = store.getConfiguration().streamerStatus;
+            statusURL = statusURL.replaceAll("#streamer", store.getConfiguration().joinedChannel);
             URL url = new URL(statusURL);
             URLConnection con = (URLConnection) url.openConnection();
             con.setRequestProperty("Accept", "application/vnd.twitchtv.v3+json");
-            con.setRequestProperty("Authorization", this.elements.configNode.getElementsByTagName("botOAUTH").item(0).getTextContent());
-            con.setRequestProperty("Client-ID", this.elements.configNode.getElementsByTagName("botClientID").item(0).getTextContent());
+            con.setRequestProperty("Authorization", store.getConfiguration().password);
+            con.setRequestProperty("Client-ID", store.getConfiguration().clientID);
             BufferedReader brin = new BufferedReader(new InputStreamReader(con.getInputStream()));
             StringBuilder response = new StringBuilder();
             String inputLine;
@@ -479,14 +477,14 @@ public final class CommandHandler {
      */
     public void followage(String user) {
         try {
-            String followURL = this.elements.configNode.getElementsByTagName("twitchFollowage").item(0).getTextContent();
+            String followURL = store.getConfiguration().followage;
             followURL = followURL.replaceAll("#user", user);
-            followURL = followURL.replaceAll("#streamer", this.elements.configNode.getElementsByTagName("myChannel").item(0).getTextContent());
+            followURL = followURL.replaceAll("#streamer", store.getConfiguration().joinedChannel);
             URL url = new URL(followURL);
             URLConnection con = (URLConnection) url.openConnection();
             con.setRequestProperty("Accept", "application/vnd.twitchtv.v3+json");
-            con.setRequestProperty("Authorization", this.elements.configNode.getElementsByTagName("botOAUTH").item(0).getTextContent());
-            con.setRequestProperty("Client-ID", this.elements.configNode.getElementsByTagName("botClientID").item(0).getTextContent());
+            con.setRequestProperty("Authorization", store.getConfiguration().password);
+            con.setRequestProperty("Client-ID", store.getConfiguration().clientID);
             BufferedReader brin = new BufferedReader(new InputStreamReader(con.getInputStream()));
             StringBuilder response = new StringBuilder();
             String inputLine;
@@ -506,7 +504,7 @@ public final class CommandHandler {
 
             brin.close();
         } catch (FileNotFoundException e) {
-            sendMessage("User " + user + "  is not following " + this.elements.configNode.getElementsByTagName("myChannel").item(0).getTextContent());
+            sendMessage("User " + user + "  is not following " + store.getConfiguration().joinedChannel);
         } catch (Exception e) {
             LOGGER.severe(e.toString());
         }
@@ -569,7 +567,7 @@ public final class CommandHandler {
      */
     public void commands(String user, boolean mod, boolean sub) {
         String auth = "";
-        if (user.contentEquals(this.elements.configNode.getElementsByTagName("myChannel").item(0).getTextContent())) {
+        if (user.contentEquals(store.getConfiguration().joinedChannel) {
             sendMessage("Command list too long for chat, see commands text file in main bot folder.");
             writeCommandFile();
         }
@@ -632,7 +630,7 @@ public final class CommandHandler {
     public void cntAdd(String msg) {
         try {
             String name = getInputParameter("!cnt-add", msg, true);
-            for (int i = 0; i < this.elements.counterNodes.getLength(); i++) {
+            for (int i = 0; i < store.getCounters().size(); i++) {
                 Node n = this.elements.counterNodes.item(i);
                 Element e = (Element) n;
                 if (name.contentEquals(e.getAttribute("name"))) {
@@ -655,7 +653,7 @@ public final class CommandHandler {
 
     public void cntDelete(String msg) {
         String name = getInputParameter("!cnt-delete", msg, true);
-        for (int i = 0; i < this.elements.counterNodes.getLength(); i++) {
+        for (int i = 0; i < store.getCounters().size(); i++) {
             Node n = this.elements.counterNodes.item(i);
             Element e = (Element) n;
             if (name.contentEquals(e.getAttribute("name"))) {
@@ -674,7 +672,7 @@ public final class CommandHandler {
             int separator = parameters.indexOf(" ");
             String name = parameters.substring(0, separator);
             int value = Integer.parseInt(parameters.substring(separator + 1));
-            for (int i = 0; i < this.elements.counterNodes.getLength(); i++) {
+            for (int i = 0; i < store.getCounters().size(); i++) {
                 Node n = this.elements.counterNodes.item(i);
                 Element e = (Element) n;
                 if (name.contentEquals(e.getAttribute("name"))) {
@@ -692,11 +690,10 @@ public final class CommandHandler {
 
     public void cntCurrent(String msg) {
         String name = getInputParameter("!cnt-current", msg, true);
-        for (int i = 0; i < this.elements.counterNodes.getLength(); i++) {
-            Node n = this.elements.counterNodes.item(i);
-            Element e = (Element) n;
-            if (name.contentEquals(e.getAttribute("name"))) {
-                sendMessage("Counter [" + name + "] is currently [" + e.getTextContent() + "]");
+        for (int i = 0; i < store.getCounters().size(); i++) {
+            final ConfigParameters.Counter counter = store.getCounters().get(i);
+            if (name.contentEquals(counter.name)) {
+                sendMessage("Counter [" + name + "] is currently [" + counter.count + "]");
                 return;
             }
         }
@@ -709,7 +706,8 @@ public final class CommandHandler {
             int separator = parameters.indexOf(" ");
             String name = parameters.substring(0, separator);
             int delta = Integer.parseInt(parameters.substring(separator + 1));
-            for (int i = 0; i < this.elements.counterNodes.getLength(); i++) {
+
+            for (int i = 0; i < store.getCounters().size(); i++) {
                 Node n = this.elements.counterNodes.item(i);
                 Element e = (Element) n;
                 if (name.contentEquals(e.getAttribute("name"))) {
@@ -728,9 +726,9 @@ public final class CommandHandler {
 
     public void totals(String msg) {
         try {
-            String[][] counters = new String[Integer.decode(elements.configNode.getElementsByTagName("numberOfCounters").item(0).getTextContent())][2];
+            String[][] counters = new String[store.getConfiguration().numCounters][2];
             int count = 0;
-            for (int i = 0; i < this.elements.counterNodes.getLength(); i++) {
+            for (int i = 0; i < store.getCounters().size(); i++) {
                 Node n = this.elements.counterNodes.item(i);
                 Element e = (Element) n;
                 counters[i][0] = e.getAttribute("name");
@@ -764,8 +762,8 @@ public final class CommandHandler {
      */
     public void filterAll(String msg, String user) {
         try {
-            String[] filters = new String[elements.filterNodes.getLength()];
-            for (int i = 0; i < this.elements.filterNodes.getLength(); i++) {
+            String[] filters = new String[store.getFilters().size()];
+            for (int i = 0; i < store.getFilters().size(); i++) {
                 Node n = this.elements.filterNodes.item(i);
                 Element e = (Element) n;
                 filters[i] = e.getAttribute("name");
@@ -792,7 +790,7 @@ public final class CommandHandler {
             int separator = parameters.indexOf(" ");
             String filter = parameters.substring(0, separator);
             String reason = parameters.substring(separator + 1);
-            for (int i = 0; i < this.elements.filterNodes.getLength(); i++) {
+            for (int i = 0; i < store.getFilters().size(); i++) {
                 Node n = this.elements.filterNodes.item(i);
                 Element e = (Element) n;
                 if (filter.contentEquals(e.getAttribute("name"))) {
@@ -815,7 +813,7 @@ public final class CommandHandler {
     public void filterDel(String msg, String user) {
         try {
             String filterName = getInputParameter("!filter-delete", msg, true);
-            for (int i = 0; i < this.elements.filterNodes.getLength(); i++) {
+            for (int i = 0; i < store.getFilters().size(); i++) {
                 Node n = this.elements.filterNodes.item(i);
                 Element e = (Element) n;
                 if (filterName.contentEquals(e.getAttribute("name"))) {
@@ -835,7 +833,7 @@ public final class CommandHandler {
     private void sendWhisper(final String msg) {
         final String message = msg;
         this.outstream.println("PRIVMSG #"
-                + this.elements.configNode.getElementsByTagName("myChannel").item(0).getTextContent()
+                + store.getConfiguration().joinedChannel
                 + " "
                 + ":"
                 + message);
@@ -844,10 +842,10 @@ public final class CommandHandler {
     public boolean checkAuthorization(String command, String username, boolean mod, boolean sub) {
         String auth = "";
         LOGGER.info("COMMAND: " + command + " USERNAME: " + username + " MOD: " + mod + " SUB: " + sub);
-        if (username.contentEquals(this.elements.configNode.getElementsByTagName("myChannel").item(0).getTextContent())) {
+        if (username.contentEquals(store.getConfiguration().joinedChannel)) {
             return true;
         }
-        for (int i = 0; i < this.elements.commandNodes.getLength(); i++) {
+        for (int i = 0; i < store.getCommands().size(); i++) {
             Node n = this.elements.commandNodes.item(i);
             Element cmdXmlNode = (Element) n;
             if (command.contentEquals(cmdXmlNode.getAttribute("name"))) {
@@ -899,8 +897,7 @@ public final class CommandHandler {
      */
     public void pyramidDetection(final String user, String msg) {
         recentMessages.add(new CachedMessage(user, msg));
-        if (recentMessages.size() > Integer.parseInt(
-                this.elements.configNode.getElementsByTagName("recentMessageCacheSize").item(0).getTextContent())) {
+        if (recentMessages.size() > store.getConfiguration().recentMessageCacheSize) {
             recentMessages.remove(0);
         }
         int patternEnd = msg.indexOf(" ");
@@ -923,7 +920,7 @@ public final class CommandHandler {
                 System.out.println(cm.getMsg() + " CACHED MESSAGE PATTERN 2");
                 patternCount = 2;
             } else if ((patternCount == 2) && (cm.getMsg().contentEquals(pattern)) && (cm.getUser().contentEquals(user))) {
-                sendMessage(this.elements.configNode.getElementsByTagName("pyramidResponse").item(0).getTextContent());
+                sendMessage(store.getConfiguration().pyramidResponse);
                 return;
             }
         }
@@ -940,7 +937,7 @@ public final class CommandHandler {
     private void sendMessage(final String msg) {
         final String message = "/me > " + msg;
         this.outstream.println("PRIVMSG #"
-                + this.elements.configNode.getElementsByTagName("myChannel").item(0).getTextContent()
+                + store.getConfiguration().joinedChannel
                 + " "
                 + ":"
                 + message);

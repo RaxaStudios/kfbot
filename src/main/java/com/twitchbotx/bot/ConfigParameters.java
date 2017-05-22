@@ -59,9 +59,21 @@ public final class ConfigParameters {
         
         public String pubSub;
 
+        public String streamerStatus;
+
+        public String followage;
+
         public String youtubeApi;
 
         public String youtubeTitle;
+
+        public int onlineCheckTimer;
+
+        public int recentMessageCacheSize;
+
+        public int numCounters;
+
+        public String pyramidResponse;
 
         @Override
         public String toString() {
@@ -73,8 +85,14 @@ public final class ConfigParameters {
                     ", host='" + host + '\'' +
                     ", port=" + port +
                     ", pubSub='" + pubSub + '\'' +
+                    ", streamerStatus='" + streamerStatus + '\'' +
+                    ", followage='" + followage + '\'' +
                     ", youtubeApi='" + youtubeApi + '\'' +
                     ", youtubeTitle='" + youtubeTitle + '\'' +
+                    ", onlineCheckTimer=" + onlineCheckTimer +
+                    ", recentMessageCacheSize=" + recentMessageCacheSize +
+                    ", numCounters=" + numCounters +
+                    ", pyramidResponse='" + pyramidResponse + '\'' +
                     '}';
         }
     }
