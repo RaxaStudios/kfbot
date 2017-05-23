@@ -112,10 +112,10 @@ public final class ConfigParameters {
         public String cdUntil;
 
         // Time in seconds for cooldown
-        public String cooldownInSec;
+        public long cooldownInSec;
 
         // Flag for whenever this command is enabled/disabled
-        public String disabled;
+        public boolean disabled;
 
         // No clue what this is used for
         public String initialDelay;
@@ -139,7 +139,7 @@ public final class ConfigParameters {
                     ", name='" + name + '\'' +
                     ", cdUntil='" + cdUntil + '\'' +
                     ", cooldownInSec='" + cooldownInSec + '\'' +
-                    ", disabled='" + disabled + '\'' +
+                    ", disabled=" + disabled +
                     ", initialDelay='" + initialDelay + '\'' +
                     ", interval='" + interval + '\'' +
                     ", repeating='" + repeating + '\'' +

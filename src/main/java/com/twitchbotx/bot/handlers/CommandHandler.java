@@ -53,8 +53,6 @@ public final class CommandHandler {
 
     private final PrintStream outstream;
 
-    private final List<CachedMessage> recentMessages = new ArrayList<>();
-
     private String[] reservedCommands = {
         "!uptime",
         "!followage",
@@ -96,60 +94,55 @@ public final class CommandHandler {
         this.outstream = stream;
     }
 
-    /**
-     * A simple inner class for storing cached messages.
-     *
-     * It simply stores the username and the message to prevent pyramids.
-     */
-    public static class CachedMessage {
-        public String user;
-        public String msg;
-
-        public CachedMessage(final String username, final String message) {
-            this.user = username;
-            this.msg = message;
-            System.out.println(this.user + this.msg + " CACHED MESSAGES");
-        }
-
-        public String getUser() {
-            return user;
-        }
-
-        public String getMsg() {
-            return msg;
-        }
-
-        @Override
-        public String toString() {
-            return "CachedMessage{" + "user=" + user + ", msg=" + msg + '}';
-        }
+    private void sendWhisper(final String msg) {
+        final String message = msg;
+        this.outstream.println("PRIVMSG #"
+                + store.getConfiguration().joinedChannel
+                + " "
+                + ":"
+                + message);
     }
 
+    /**
+     * This command will send a message out to a specific Twitch channel.
+     *
+     * It will also wrap the message in pretty text (> /me) before sending it
+     * out.
+     *
+     * @param msg The message to be sent out to the channel
+     */
+    private void sendMessage(final String msg) {
+        final String message = "/me > " + msg;
+        this.outstream.println("PRIVMSG #"
+                + store.getConfiguration().joinedChannel
+                + " "
+                + ":"
+                + message);
+    }
 
     public void parseForUserCommands(String msg, String username, boolean mod, boolean sub) {
         for (int i = 0; i < store.getCommands().size(); i++) {
             try {
-                Node n = this.elements.commandNodes.item(i);
-                Element e = (Element) n;
+                final ConfigParameters.Command command =  store.getCommands().get(i);
 
                 int endOfCmd = msg.indexOf(" ");
                 if (endOfCmd == -1) {
                     endOfCmd = msg.length();
                 }
                 String cmd = msg.substring(0, endOfCmd);
-                if (cmd.contentEquals(e.getAttribute("name"))) {
+                if (cmd.contentEquals(command.name)) {
                     if (!checkAuthorization(cmd, username, mod, sub)) {
                         return;
                     }
-                    if (Boolean.parseBoolean(e.getAttribute("disabled"))) {
+                    if (command.disabled) {
                         return;
                     }
                     String sendTxt;
                     if (msg.contains(" ")) {
                         String param = msg.substring(endOfCmd + 1);
-                        sendTxt = e.getTextContent().replace("%param%", param);
+                        sendTxt = command.text.replace("%param%", param);
                     } else {
-                        sendTxt = e.getTextContent();
+                        sendTxt = command.text;
                     }
                     if (sendTxt.contains("%param%")) {
                         sendMessage(cmd + " requires a parameter.");
@@ -158,19 +151,17 @@ public final class CommandHandler {
                     if (!username.contentEquals(store.getConfiguration().joinedChannel)) {
                         Calendar calendar = Calendar.getInstance();
                         Date now = calendar.getTime();
-                        Date cdTime = new Date(0L);
-                        if (!e.getAttribute("cdUntil").isEmpty()) {
-                            cdTime = new Date(Long.parseLong(e.getAttribute("cdUntil")));
-                        }
+                        Date cdTime = new Date(command.cdUntil);
+
                         if (now.before(cdTime)) {
                             return;
                         }
-                        cdTime = new Date(now.getTime() + Long.parseLong(e.getAttribute("cooldown")) * 1000L);
+                        cdTime = new Date(now.getTime() + command.cooldownInSec * 1000L);
                         e.setAttribute("cdUntil", Long.toString(cdTime.getTime()));
                     }
                     sendMessage(sendTxt);
-                    if (!e.getAttribute("sound").isEmpty()) {
-                        playSound(e.getAttribute("sound"));
+                    if (!command.sound.isEmpty()) {
+                        playSound(command.sound);
                     }
                 }
             } catch (DOMException | NumberFormatException e) {
@@ -240,9 +231,8 @@ public final class CommandHandler {
             return;
         }
         for (int i = 0; i < store.getCommands().size(); i++) {
-            Node n = this.elements.commandNodes.item(i);
-            Element e = (Element) n;
-            if (cmd.contentEquals(e.getAttribute("name"))) {
+            final ConfigParameters.Command command = store.getCommands().get(i);
+            if (cmd.contentEquals(command.name)) {
                 this.elements.commands.removeChild(n);
                 writeXML();
                 sendMessage("Command [" + cmd + "] deleted.");
@@ -271,9 +261,8 @@ public final class CommandHandler {
                 return;
             }
             for (int i = 0; i < store.getCommands().size(); i++) {
-                Node n = this.elements.commandNodes.item(i);
-                Element e = (Element) n;
-                if (cmd.contentEquals(e.getAttribute("name"))) {
+                final ConfigParameters.Command command = store.getCommands().get(i);
+                if (cmd.contentEquals(command.name)) {
                     e.setTextContent(txt);
                     writeXML();
                     sendMessage("Command [" + cmd + "] changed to " + txt);
@@ -423,93 +412,6 @@ public final class CommandHandler {
         }
     }
 
-    /**
-     * This creates the URL = api.twitch.tv/kraken with desired streamer name("myChannel") from kfbot1.0.xml
-     * Opens a connection, begins reading using BufferedReader brin, builds a String response based on API reply
-     * nce response is done building, checks for "stream\:null" response - this means stream is not live
-     * Creates Strings to hold content placed between int "bi" and int "ei" as per their defined index
-     *
-     * @param msg
-     */
-    public void uptime(String msg) {
-        try {
-            String statusURL = store.getConfiguration().streamerStatus;
-            statusURL = statusURL.replaceAll("#streamer", store.getConfiguration().joinedChannel);
-            URL url = new URL(statusURL);
-            URLConnection con = (URLConnection) url.openConnection();
-            con.setRequestProperty("Accept", "application/vnd.twitchtv.v3+json");
-            con.setRequestProperty("Authorization", store.getConfiguration().password);
-            con.setRequestProperty("Client-ID", store.getConfiguration().clientID);
-            BufferedReader brin = new BufferedReader(new InputStreamReader(con.getInputStream()));
-            StringBuilder response = new StringBuilder();
-            String inputLine;
-            while ((inputLine = brin.readLine()) != null) {
-                response.append(inputLine);
-            }
-            brin.close();
-            if (response.toString().contains("\"stream\":null")) {
-                sendMessage("Stream is not currently live.");
-            } else {
-                int bi = response.toString().indexOf("\"created_at\":") + 14;
-                int ei = response.toString().indexOf("\",", bi);
-                String s = response.toString().substring(bi, ei);
-                Instant start = Instant.parse(s);
-                Instant current = Instant.now();
-                long gap = ChronoUnit.MILLIS.between(start, current);
-                String upT = String.format("%d hours, %d minutes, %d seconds", new Object[]{
-                    TimeUnit.MILLISECONDS.toHours(gap),
-                    TimeUnit.MILLISECONDS.toMinutes(gap) - TimeUnit.HOURS.toMinutes(TimeUnit.MILLISECONDS.toHours(gap)),
-                    TimeUnit.MILLISECONDS.toSeconds(gap) - TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(gap))
-                });
-                sendMessage("Stream has been up for " + upT + ".");
-            }
-        } catch (Exception e) {
-            LOGGER.severe(e.toString());
-        }
-    }
-
-    /*
-** This delivers the original follow date 
-**
-** @param user
-** @return formated date of created_at per https://api.twitch.tv/kraken/users/test_user1/follows/channels/test_channel
-**
-     */
-    public void followage(String user) {
-        try {
-            String followURL = store.getConfiguration().followage;
-            followURL = followURL.replaceAll("#user", user);
-            followURL = followURL.replaceAll("#streamer", store.getConfiguration().joinedChannel);
-            URL url = new URL(followURL);
-            URLConnection con = (URLConnection) url.openConnection();
-            con.setRequestProperty("Accept", "application/vnd.twitchtv.v3+json");
-            con.setRequestProperty("Authorization", store.getConfiguration().password);
-            con.setRequestProperty("Client-ID", store.getConfiguration().clientID);
-            BufferedReader brin = new BufferedReader(new InputStreamReader(con.getInputStream()));
-            StringBuilder response = new StringBuilder();
-            String inputLine;
-            while ((inputLine = brin.readLine()) != null) {
-                response.append(inputLine);
-            }
-
-            int bi = response.toString().indexOf("\"created_at\":") + 14;
-            int ei = response.toString().indexOf("T", bi);
-
-            String s = response.toString().substring(bi, ei);
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-            LocalDate begin = LocalDate.parse(s, formatter);
-            LocalDate today = LocalDate.now();
-            long gap = ChronoUnit.DAYS.between(begin, today);
-            sendMessage(user + " has been following for " + gap + " days. Starting on " + begin + ".");
-
-            brin.close();
-        } catch (FileNotFoundException e) {
-            sendMessage("User " + user + "  is not following " + store.getConfiguration().joinedChannel);
-        } catch (Exception e) {
-            LOGGER.severe(e.toString());
-        }
-    }
-
     public void setMsgCacheSize(String msg) {
         try {
             String value = getInputParameter("!set-msgCache", msg, true);
@@ -567,7 +469,7 @@ public final class CommandHandler {
      */
     public void commands(String user, boolean mod, boolean sub) {
         String auth = "";
-        if (user.contentEquals(store.getConfiguration().joinedChannel) {
+        if (user.contentEquals(store.getConfiguration().joinedChannel)) {
             sendMessage("Command list too long for chat, see commands text file in main bot folder.");
             writeCommandFile();
         }
@@ -622,234 +524,16 @@ public final class CommandHandler {
         }
     }
 
-    /* 
-    ** Allows for counters to be added, deleted, set, added to, and all totals calls
-    **
-    ** return name and value   
-     */
-    public void cntAdd(String msg) {
-        try {
-            String name = getInputParameter("!cnt-add", msg, true);
-            for (int i = 0; i < store.getCounters().size(); i++) {
-                Node n = this.elements.counterNodes.item(i);
-                Element e = (Element) n;
-                if (name.contentEquals(e.getAttribute("name"))) {
-                    sendMessage("Counter [" + name + "] already exists.");
-                    return;
-                }
-            }
-            Element newNode = this.elements.doc.createElement("counter");
-            newNode.appendChild(this.elements.doc.createTextNode("0"));
-            newNode.setAttribute("name", name);
-
-            this.elements.counters.appendChild(newNode);
-            writeXML();
-            String confirmation = "Added counter [" + name + "]";
-            sendMessage(confirmation);
-        } catch (IllegalArgumentException e) {
-            sendMessage("Syntax: !cnt-add [name]");
-        }
-    }
-
-    public void cntDelete(String msg) {
-        String name = getInputParameter("!cnt-delete", msg, true);
-        for (int i = 0; i < store.getCounters().size(); i++) {
-            Node n = this.elements.counterNodes.item(i);
-            Element e = (Element) n;
-            if (name.contentEquals(e.getAttribute("name"))) {
-                this.elements.counters.removeChild(n);
-                writeXML();
-                sendMessage("Counter [" + name + "] deleted.");
-                return;
-            }
-        }
-        sendMessage("Counter [" + name + "] not found.");
-    }
-
-    public void cntSet(String msg) {
-        try {
-            String parameters = getInputParameter("!cnt-set", msg, true);
-            int separator = parameters.indexOf(" ");
-            String name = parameters.substring(0, separator);
-            int value = Integer.parseInt(parameters.substring(separator + 1));
-            for (int i = 0; i < store.getCounters().size(); i++) {
-                Node n = this.elements.counterNodes.item(i);
-                Element e = (Element) n;
-                if (name.contentEquals(e.getAttribute("name"))) {
-                    e.setTextContent(Integer.toString(value));
-                    writeXML();
-                    sendMessage("Counter [" + name + "] set to [" + Integer.toString(value) + "]");
-                    return;
-                }
-            }
-            sendMessage("Counter [" + name + "] not found.");
-        } catch (IllegalArgumentException e) {
-            sendMessage("Syntax: !cnt-set [name] [value]");
-        }
-    }
-
-    public void cntCurrent(String msg) {
-        String name = getInputParameter("!cnt-current", msg, true);
-        for (int i = 0; i < store.getCounters().size(); i++) {
-            final ConfigParameters.Counter counter = store.getCounters().get(i);
-            if (name.contentEquals(counter.name)) {
-                sendMessage("Counter [" + name + "] is currently [" + counter.count + "]");
-                return;
-            }
-        }
-        sendMessage("Counter [" + name + "] not found.");
-    }
-
-    public void count(String msg) {
-        try {
-            String parameters = getInputParameter("!countadd", msg, true);
-            int separator = parameters.indexOf(" ");
-            String name = parameters.substring(0, separator);
-            int delta = Integer.parseInt(parameters.substring(separator + 1));
-
-            for (int i = 0; i < store.getCounters().size(); i++) {
-                Node n = this.elements.counterNodes.item(i);
-                Element e = (Element) n;
-                if (name.contentEquals(e.getAttribute("name"))) {
-                    int value = Integer.parseInt(e.getTextContent()) + delta;
-                    e.setTextContent(Integer.toString(value));
-                    writeXML();
-                    sendMessage(delta + " points added to [" + name + "]");
-                    return;
-                }
-            }
-            sendMessage("Counter [" + name + "] not found.");
-        } catch (IllegalArgumentException e) {
-            sendMessage("Syntax: !countadd [name] [value]");
-        }
-    }
-
-    public void totals(String msg) {
-        try {
-            String[][] counters = new String[store.getConfiguration().numCounters][2];
-            int count = 0;
-            for (int i = 0; i < store.getCounters().size(); i++) {
-                Node n = this.elements.counterNodes.item(i);
-                Element e = (Element) n;
-                counters[i][0] = e.getAttribute("name");
-                counters[i][1] = e.getTextContent();
-                count++;
-            }
-            switch (count) {
-                case 1:
-                    sendMessage("Current totals: [" + counters[0][0] + "]: " + counters[0][1]);
-                    break;
-                case 2:
-                    sendMessage("Current totals: [" + counters[0][0] + "]: " + counters[0][1] + " [" + counters[1][0] + "]: " + counters[1][1]);
-                    break;
-                case 3:
-                    sendMessage("Current totals: [" + counters[0][0] + "]: " + counters[0][1] + " [" + counters[1][0] + "]: " + counters[1][1] + " [" + counters[2][0] + "]: " + counters[2][1]);
-                    break;
-                case 4:
-                    sendMessage("Current totals: [" + counters[0][0] + "]: " + counters[0][1] + " [" + counters[1][0] + "]: " + counters[1][1] + " [" + counters[2][0] + "]: " + counters[2][1] + " " + counters[3][0] + ": " + counters[3][1]);
-                    break;
-                default:
-                    break;
-            }
-        } catch (IllegalArgumentException e) {
-            sendMessage("No counts found.");
-        }
-    }
-
-    /*
-    ** Methods to add and remove moderator filters
-    ** 
-     */
-    public void filterAll(String msg, String user) {
-        try {
-            String[] filters = new String[store.getFilters().size()];
-            for (int i = 0; i < store.getFilters().size(); i++) {
-                Node n = this.elements.filterNodes.item(i);
-                Element e = (Element) n;
-                filters[i] = e.getAttribute("name");
-            }
-            StringBuilder sb = new StringBuilder();
-            for (int j = 0; j < filters.length; j++) {
-                if (j > 0) {
-                    sb.append("], [");
-                }
-                sb.append(filters[j]);
-            }
-            sendWhisper(".w " + user + " Current filters: [" + sb.toString() + "]");
-
-            return;
-        } catch (IllegalArgumentException e) {
-            LOGGER.info(e.toString());
-        }
-        sendWhisper(".w " + user + " No filters found.");
-    }
-
-    public void filterAdd(String msg, String user) {
-        try {
-            String parameters = getInputParameter("!filter-add", msg, true);
-            int separator = parameters.indexOf(" ");
-            String filter = parameters.substring(0, separator);
-            String reason = parameters.substring(separator + 1);
-            for (int i = 0; i < store.getFilters().size(); i++) {
-                Node n = this.elements.filterNodes.item(i);
-                Element e = (Element) n;
-                if (filter.contentEquals(e.getAttribute("name"))) {
-                    sendWhisper(".w " + user + " Filter already exists.");
-                    return;
-                }
-            }
-            Element newNode = this.elements.doc.createElement("filter");
-            newNode.setAttribute("name", filter);
-            newNode.setAttribute("reason", reason);
-            newNode.setAttribute("disable", "false");
-            this.elements.filters.appendChild(newNode);
-            writeXML();
-            sendWhisper(".w " + user + " Filter added.");
-        } catch (IllegalArgumentException e) {
-            LOGGER.info(e.toString());
-        }
-    }
-
-    public void filterDel(String msg, String user) {
-        try {
-            String filterName = getInputParameter("!filter-delete", msg, true);
-            for (int i = 0; i < store.getFilters().size(); i++) {
-                Node n = this.elements.filterNodes.item(i);
-                Element e = (Element) n;
-                if (filterName.contentEquals(e.getAttribute("name"))) {
-                    this.elements.filters.removeChild(n);
-                    writeXML();
-                    sendWhisper(".w " + user + " Filter deleted.");
-                    return;
-                }
-            }
-
-            sendWhisper(".w " + user + " Filter not found.");
-        } catch (IllegalArgumentException e) {
-            LOGGER.info(e.toString());
-        }
-    }
-
-    private void sendWhisper(final String msg) {
-        final String message = msg;
-        this.outstream.println("PRIVMSG #"
-                + store.getConfiguration().joinedChannel
-                + " "
-                + ":"
-                + message);
-    }
-
-    public boolean checkAuthorization(String command, String username, boolean mod, boolean sub) {
+    public boolean checkAuthorization(String userCommand, String username, boolean mod, boolean sub) {
         String auth = "";
-        LOGGER.info("COMMAND: " + command + " USERNAME: " + username + " MOD: " + mod + " SUB: " + sub);
+        LOGGER.info("COMMAND: " + userCommand + " USERNAME: " + username + " MOD: " + mod + " SUB: " + sub);
         if (username.contentEquals(store.getConfiguration().joinedChannel)) {
             return true;
         }
         for (int i = 0; i < store.getCommands().size(); i++) {
-            Node n = this.elements.commandNodes.item(i);
-            Element cmdXmlNode = (Element) n;
-            if (command.contentEquals(cmdXmlNode.getAttribute("name"))) {
-                auth = cmdXmlNode.getAttribute("auth");
+            final ConfigParameters.Command command = store.getCommands().get(i);
+            if (userCommand.contentEquals(command.name)) {
+                auth = command.authentication;
                 break;
             }
         }
@@ -883,64 +567,6 @@ public final class CommandHandler {
             return true;
         }
         return false;
-    }
-
-    /**
-     * This method is a quick and dirty solution for pyramid detection.
-     *
-     * It basically caches the last 15 messages, and user mapping, and does a
-     * check on whether or not the user is doing a pattern of 3.
-     *
-     * @param user A given user that say a given message
-     *
-     * @param msg A message provided by the user
-     */
-    public void pyramidDetection(final String user, String msg) {
-        recentMessages.add(new CachedMessage(user, msg));
-        if (recentMessages.size() > store.getConfiguration().recentMessageCacheSize) {
-            recentMessages.remove(0);
-        }
-        int patternEnd = msg.indexOf(" ");
-        String pattern;
-        if (patternEnd == -1) {
-            pattern = msg;
-            System.out.println(pattern + " PATTERN1");
-        } else {
-            pattern = msg.substring(0, msg.indexOf(" "));
-            System.out.println(pattern + " PATTERN2");
-        }
-        if (!msg.contentEquals(pattern + " " + pattern + " " + pattern)) {
-            System.out.println(msg + " IF MSG DOES NOT TEST");
-            return;
-        }
-        int patternCount = 3;
-        for (int i = recentMessages.size() - 2; i >= 0; i--) {
-            CachedMessage cm = (CachedMessage) recentMessages.get(i);
-            if ((patternCount == 3) && (cm.getMsg().contentEquals(pattern + " " + pattern)) && (cm.getUser().contentEquals(user))) {
-                System.out.println(cm.getMsg() + " CACHED MESSAGE PATTERN 2");
-                patternCount = 2;
-            } else if ((patternCount == 2) && (cm.getMsg().contentEquals(pattern)) && (cm.getUser().contentEquals(user))) {
-                sendMessage(store.getConfiguration().pyramidResponse);
-                return;
-            }
-        }
-    }
-
-    /**
-     * This command will send a message out to a specific Twitch channel.
-     *
-     * It will also wrap the message in pretty text (> /me) before sending it
-     * out.
-     *
-     * @param msg The message to be sent out to the channel
-     */
-    private void sendMessage(final String msg) {
-        final String message = "/me > " + msg;
-        this.outstream.println("PRIVMSG #"
-                + store.getConfiguration().joinedChannel
-                + " "
-                + ":"
-                + message);
     }
 
     /**
@@ -1006,10 +632,9 @@ public final class CommandHandler {
             sendMessage("Failed: " + cmd + " is a reserved command.");
             return false;
         }
-        for (int i = 0; i < this.elements.commandNodes.getLength(); i++) {
-            Node n = this.elements.commandNodes.item(i);
-            Element el = (Element) n;
-            if (cmd.contentEquals(el.getAttribute("name"))) {
+        for (int i = 0; i < store.getCommands().size(); i++) {
+            final ConfigParameters.Command command = store.getCommands().get(i);
+            if (cmd.contentEquals(command.name)) {
                 el.setAttribute(attrib, value);
                 writeXML();
                 return true;

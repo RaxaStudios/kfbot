@@ -75,6 +75,15 @@ public final class XmlDatastore implements Datastore {
         for (int i = 0; i < this.elements.commandNodes.getLength(); i++) {
             Node n = this.elements.commandNodes.item(i);
             Element e = (Element) n;
+
+            final ConfigParameters.Command command = new ConfigParameters.Command();
+            command.name = e.getAttribute("name");
+            command.disabled = Boolean.parseBoolean(e.getAttribute("disabled"));
+            command.text = e.getTextContent();
+            command.cdUntil = e.getAttribute("cdUntil");
+            command.cooldownInSec = Long.parseLong(e.getAttribute("cooldown"));
+            command.sound = e.getAttribute("sound");
+            commands.add(command);
         }
 
         return commands;
@@ -84,8 +93,14 @@ public final class XmlDatastore implements Datastore {
     public List<ConfigParameters.Filter> getFilters() {
         final List<ConfigParameters.Filter> filters = new ArrayList<>();
         for (int i = 0; i < this.elements.filterNodes.getLength(); i++) {
-            Node n = this.elements.commandNodes.item(i);
+            Node n = this.elements.filterNodes.item(i);
             Element e = (Element) n;
+
+            final ConfigParameters.Filter filter = new ConfigParameters.Filter();
+            filter.name = e.getAttribute("name");
+            filter.reason = e.getAttribute("reason");
+            filter.disabled = Boolean.parseBoolean(e.getAttribute("disabled"));
+            filters.add(filter);
         }
 
         return filters;
@@ -98,6 +113,10 @@ public final class XmlDatastore implements Datastore {
             Node n = this.elements.commandNodes.item(i);
             Element e = (Element) n;
 
+            final ConfigParameters.Counter counter = new ConfigParameters.Counter();
+            counter.name = e.getAttribute("name");
+            counter.count = Integer.parseInt(e.getAttribute("count"));
+            counters.add(counter);
         }
 
         return counters;
