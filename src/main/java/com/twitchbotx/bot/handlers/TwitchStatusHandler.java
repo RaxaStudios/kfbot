@@ -1,8 +1,11 @@
 package com.twitchbotx.bot.handlers;
 
+import com.twitchbotx.bot.Datastore;
+
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.InputStreamReader;
+import java.io.PrintStream;
 import java.net.URL;
 import java.net.URLConnection;
 import java.time.Instant;
@@ -10,8 +13,17 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Logger;
 
-public class TwitchStatusHandler {
+public final class TwitchStatusHandler {
+
+    private static final Logger LOGGER = Logger.getLogger(TwitchStatusHandler.class.getSimpleName());
+
+    private final Datastore store;
+
+    public TwitchStatusHandler(final Datastore store) {
+        this.store = store;
+    }
 
     /**
      * This creates the URL = api.twitch.tv/kraken with desired streamer name("myChannel") from kfbot1.0.xml
@@ -21,7 +33,7 @@ public class TwitchStatusHandler {
      *
      * @param msg
      */
-    public void uptime(String msg) {
+    public String uptime(final String msg) {
         try {
             String statusURL = store.getConfiguration().streamerStatus;
             statusURL = statusURL.replaceAll("#streamer", store.getConfiguration().joinedChannel);
@@ -38,8 +50,10 @@ public class TwitchStatusHandler {
             }
             brin.close();
             if (response.toString().contains("\"stream\":null")) {
-                sendMessage("Stream is not currently live.");
-            } else {
+                return "Stream is not currently live.";
+            }
+
+            else {
                 int bi = response.toString().indexOf("\"created_at\":") + 14;
                 int ei = response.toString().indexOf("\",", bi);
                 String s = response.toString().substring(bi, ei);
@@ -51,11 +65,13 @@ public class TwitchStatusHandler {
                         TimeUnit.MILLISECONDS.toMinutes(gap) - TimeUnit.HOURS.toMinutes(TimeUnit.MILLISECONDS.toHours(gap)),
                         TimeUnit.MILLISECONDS.toSeconds(gap) - TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(gap))
                 });
-                sendMessage("Stream has been up for " + upT + ".");
+                return "Stream has been up for " + upT + ".";
             }
         } catch (Exception e) {
             LOGGER.severe(e.toString());
         }
+
+        return "Unable to connect to Twitch server. Please try again later.";
     }
 
     /*
@@ -65,7 +81,7 @@ public class TwitchStatusHandler {
 ** @return formated date of created_at per https://api.twitch.tv/kraken/users/test_user1/follows/channels/test_channel
 **
      */
-    public void followage(String user) {
+    public String followage(final String user) {
         try {
             String followURL = store.getConfiguration().followage;
             followURL = followURL.replaceAll("#user", user);
@@ -90,13 +106,16 @@ public class TwitchStatusHandler {
             LocalDate begin = LocalDate.parse(s, formatter);
             LocalDate today = LocalDate.now();
             long gap = ChronoUnit.DAYS.between(begin, today);
-            sendMessage(user + " has been following for " + gap + " days. Starting on " + begin + ".");
 
             brin.close();
+            return user + " has been following for " + gap + " days. Starting on " + begin + ".";
+
         } catch (FileNotFoundException e) {
-            sendMessage("User " + user + "  is not following " + store.getConfiguration().joinedChannel);
+            return "User " + user + "  is not following " + store.getConfiguration().joinedChannel;
         } catch (Exception e) {
             LOGGER.severe(e.toString());
         }
+
+        return "Unable to connect to Twitch server. Please try again later.";
     }
 }

@@ -1,8 +1,6 @@
 package com.twitchbotx.bot;
 
-import com.twitchbotx.bot.handlers.CommandHandler;
-import com.twitchbotx.bot.handlers.ModerationHandler;
-import com.twitchbotx.bot.handlers.YoutubeHandler;
+import com.twitchbotx.bot.handlers.*;
 
 import java.io.PrintStream;
 import java.util.logging.Logger;
@@ -16,7 +14,7 @@ public final class CommandParser {
     private static final Logger LOGGER = Logger.getLogger(CommandParser.class.getSimpleName());
 
     // For handling all normal commands
-    private final CommandHandler commandHandler;
+    private final CommandOptionHandler commandOptionsHandler;
 
     // A stream for communicating to twitch chat through IRC
     private final PrintStream outstream;
@@ -24,15 +22,34 @@ public final class CommandParser {
     // For handling all youtube link messaging
     private final YoutubeHandler youtubeHandler;
 
-    // Soon to be added for filter options
+    // For moderation filtering options
     private final ModerationHandler moderationHandler;
+
+    // For pyramid detection
+    private final PyramidDetector pyramidDetector;
+
+    // For Twitch statuses
+    private final TwitchStatusHandler twitchStatusHandler;
+
+    // For counter handling
+    private final CountHandler countHandler;
+
+    // For filter handling
+    private final FilterHandler filterHandler;
 
     // A simple constructor for this class that takes in the XML elements
     // for quick modification
     public CommandParser(final Datastore store, final PrintStream stream) {
-        this.commandHandler = new CommandHandler(store, stream);
+
+        // all the handlers for different messages
+        this.commandOptionsHandler = new CommandOptionHandler(store);
+        this.pyramidDetector = new PyramidDetector(store);
+        this.twitchStatusHandler = new TwitchStatusHandler(store);
+        this.countHandler = new CountHandler(store);
+        this.filterHandler = new FilterHandler(store);
         this.youtubeHandler = new YoutubeHandler(store, stream);
         this.moderationHandler = new ModerationHandler(store, stream);
+
         this.outstream = stream;
     }
 
@@ -66,7 +83,12 @@ public final class CommandParser {
             }
         }
 
-        //commandHandler.pyramidDetection(username, trailing);
+        //
+//        final boolean detected = pyramidDetector.pyramidDetection(username, trailing);
+//        if(detected) {
+//            twitchMessenger.sendMessage(store.getConfiguration().pyramidResponse);
+//        }
+
         youtubeHandler.handleLinkRequest(trailing);
         moderationHandler.handleTool(username, trailing);
 
@@ -76,160 +98,159 @@ public final class CommandParser {
 
         if (trailing.startsWith("!uptime")) {
             LOGGER.log(Level.INFO, "{0} {1} {2}", new Object[]{username, mod, sub});
-            if (commandHandler.checkAuthorization("!uptime", username, mod, sub)) {
-                commandHandler.uptime(trailing);
+            if (commandOptionsHandler.checkAuthorization("!uptime", username, mod, sub)) {
+                twitchStatusHandler.uptime(trailing);
             }
             return;
         }
 
         if (trailing.startsWith("!followage")) {
-            if (commandHandler.checkAuthorization("!followage", username, mod, sub)) {
+            if (commandOptionsHandler.checkAuthorization("!followage", username, mod, sub)) {
                 String user = username.toLowerCase();
-                commandHandler.followage(user);
+                twitchStatusHandler.followage(user);
             }
             return;
         }
 
         if (trailing.startsWith("!commands")) {
-            if (commandHandler.checkAuthorization("!commands", username, mod, sub)) {
-                commandHandler.commands(username, mod, sub);
+            if (commandOptionsHandler.checkAuthorization("!commands", username, mod, sub)) {
+                commandOptionsHandler.commands(username, mod, sub);
             }
         }
 
         if (trailing.startsWith("!command-add")) {
-            if (commandHandler.checkAuthorization("!command-add", username, mod, sub)) {
-                commandHandler.addCmd(trailing);
+            if (commandOptionsHandler.checkAuthorization("!command-add", username, mod, sub)) {
+                commandOptionsHandler.addCommand(trailing);
             }
             return;
         }
         if (trailing.startsWith("!command-delete")) {
-            if (commandHandler.checkAuthorization("!command-delete", username, mod, sub)) {
-                commandHandler.delCmd(trailing);
+            if (commandOptionsHandler.checkAuthorization("!command-delete", username, mod, sub)) {
+                commandOptionsHandler.deleteCommand(trailing);
             }
             return;
         }
         if (trailing.startsWith("!command-edit")) {
-            if (commandHandler.checkAuthorization("!command-edit", username, mod, sub)) {
-                commandHandler.editCmd(trailing);
+            if (commandOptionsHandler.checkAuthorization("!command-edit", username, mod, sub)) {
+                commandOptionsHandler.editCommand(trailing);
             }
             return;
         }
         if (trailing.startsWith("!command-auth")) {
-            if (commandHandler.checkAuthorization("!command-auth", username, mod, sub)) {
-                commandHandler.authCmd(username, trailing);
+            if (commandOptionsHandler.checkAuthorization("!command-auth", username, mod, sub)) {
+                commandOptionsHandler.authorizeCommand(username, trailing);
             }
             return;
         }
         if (trailing.startsWith("!command-enable")) {
-            if (commandHandler.checkAuthorization("!command-enable", username, mod, sub)) {
-                commandHandler.enableCmd(trailing);
+            if (commandOptionsHandler.checkAuthorization("!command-enable", username, mod, sub)) {
+                commandOptionsHandler.commandEnable(trailing);
             }
             return;
         }
         if (trailing.startsWith("!command-disable")) {
-            if (commandHandler.checkAuthorization("!command-disable", username, mod, sub)) {
-                commandHandler.disableCmd(trailing);
+            if (commandOptionsHandler.checkAuthorization("!command-disable", username, mod, sub)) {
+                commandOptionsHandler.commandDisable(trailing);
             }
             return;
         }
         if (trailing.startsWith("!command-repeat")) {
-            if (commandHandler.checkAuthorization("!command-repeat", username, mod, sub)) {
-                commandHandler.repeatingCmd(trailing);
+            if (commandOptionsHandler.checkAuthorization("!command-repeat", username, mod, sub)) {
+                commandOptionsHandler.repeatCommand(trailing);
             }
             return;
         }
         if (trailing.startsWith("!command-delay")) {
-            if (commandHandler.checkAuthorization("!command-delay", username, mod, sub)) {
-                commandHandler.cmdDelay(trailing);
+            if (commandOptionsHandler.checkAuthorization("!command-delay", username, mod, sub)) {
+                commandOptionsHandler.commandDelay(trailing);
             }
             return;
         }
         if (trailing.startsWith("!command-interval")) {
-            if (commandHandler.checkAuthorization("!command-interval", username, mod, sub)) {
-                commandHandler.cmdInterval(trailing);
+            if (commandOptionsHandler.checkAuthorization("!command-interval", username, mod, sub)) {
+                commandOptionsHandler.commandInterval(trailing);
             }
             return;
         }
         if (trailing.startsWith("!command-cooldown")) {
-            if (commandHandler.checkAuthorization("!command-cooldown", username, mod, sub)) {
-                commandHandler.cmdCooldown(trailing);
+            if (commandOptionsHandler.checkAuthorization("!command-cooldown", username, mod, sub)) {
+                commandOptionsHandler.commandCooldown(trailing);
             }
             return;
         }
         if (trailing.startsWith("!command-sound")) {
-            if (commandHandler.checkAuthorization("!command-sound", username, mod, sub)) {
-                commandHandler.cmdSound(trailing);
+            if (commandOptionsHandler.checkAuthorization("!command-sound", username, mod, sub)) {
+                commandOptionsHandler.commandSound(trailing);
             }
             return;
         }
 
         if (trailing.startsWith("!filter-all")) {
-            if (commandHandler.checkAuthorization("!filter-all", username, mod, sub)) {
-                commandHandler.filterAll(trailing, username);
+            if (commandOptionsHandler.checkAuthorization("!filter-all", username, mod, sub)) {
+                filterHandler.getAllFilters(trailing, username);
             }
         }
         if (trailing.startsWith("!filter-add")) {
-            if (commandHandler.checkAuthorization("!filter-add", username, mod, sub)) {
-                commandHandler.filterAdd(trailing, username);
+            if (commandOptionsHandler.checkAuthorization("!filter-add", username, mod, sub)) {
+                filterHandler.addFilter(trailing, username);
             }
         }
         if (trailing.startsWith("!filter-delete")) {
-            if (commandHandler.checkAuthorization("!filter-delete", username, mod, sub)) {
-                commandHandler.filterDel(trailing, username);
+            if (commandOptionsHandler.checkAuthorization("!filter-delete", username, mod, sub)) {
+                filterHandler.deleteFilter(trailing, username);
             }
         }
 
         if (trailing.startsWith("!set-msgCache")) {
-            if (commandHandler.checkAuthorization("!set-msgCache", username, mod, sub)) {
-                commandHandler.setMsgCacheSize(trailing);
+            if (commandOptionsHandler.checkAuthorization("!set-msgCache", username, mod, sub)) {
+                commandOptionsHandler.setMessageCacheSize(trailing);
             }
             return;
         }
         if (trailing.startsWith("!set-pyramidResponse")) {
-            if (commandHandler.checkAuthorization("!set-pyramidResponse", username, mod, sub)) {
-                commandHandler.setPyramidResponse(trailing);
+            if (commandOptionsHandler.checkAuthorization("!set-pyramidResponse", username, mod, sub)) {
+                commandOptionsHandler.setPyramidResponse(trailing);
             }
             return;
         }
         if (trailing.startsWith("!cnt-add")) {
-            if (commandHandler.checkAuthorization("!cnt-add", username, mod, sub)) {
-                commandHandler.cntAdd(trailing);
+            if (commandOptionsHandler.checkAuthorization("!cnt-add", username, mod, sub)) {
+                countHandler.addCounter(trailing);
             }
             return;
         }
         if (trailing.startsWith("!cnt-delete")) {
-            if (commandHandler.checkAuthorization("!cnt-delete", username, mod, sub)) {
-                commandHandler.cntDelete(trailing);
+            if (commandOptionsHandler.checkAuthorization("!cnt-delete", username, mod, sub)) {
+                countHandler.deleteCounter(trailing);
             }
             return;
         }
         if (trailing.startsWith("!cnt-set")) {
-            if (commandHandler.checkAuthorization("!cnt-set", username, mod, sub)) {
-                commandHandler.cntSet(trailing);
+            if (commandOptionsHandler.checkAuthorization("!cnt-set", username, mod, sub)) {
+                countHandler.setCounter(trailing);
             }
             return;
         }
         if (trailing.startsWith("!cnt-current")) {
-            if (commandHandler.checkAuthorization("!cnt-current", username, mod, sub)) {
-                commandHandler.cntCurrent(trailing);
+            if (commandOptionsHandler.checkAuthorization("!cnt-current", username, mod, sub)) {
+                countHandler.getCurrentCount(trailing);
             }
             return;
         }
         if (trailing.startsWith("!countadd")) {
-            if (commandHandler.checkAuthorization("!countadd", username, mod, sub)) {
-                commandHandler.count(trailing);
-
+            if (commandOptionsHandler.checkAuthorization("!countadd", username, mod, sub)) {
+                countHandler.updateCount(trailing);
             }
             return;
         }
 
         if (trailing.startsWith("!totals")) {
-            if (commandHandler.checkAuthorization("!totals", username, mod, sub)) {
-                commandHandler.totals(trailing);
+            if (commandOptionsHandler.checkAuthorization("!totals", username, mod, sub)) {
+                countHandler.totals();
             }
             return;
         }
-        commandHandler.parseForUserCommands(trailing, username, mod, sub);
+        commandOptionsHandler.parseForUserCommands(trailing, username, mod, sub);
     }
 
     /**

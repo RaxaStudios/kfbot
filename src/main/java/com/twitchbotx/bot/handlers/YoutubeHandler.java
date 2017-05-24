@@ -72,27 +72,24 @@ public final class YoutubeHandler {
      * @param msg A full message from Twitch IRC API from a particular user
      */
     public void handleLinkRequest(final String msg) {
-
-        for (;;) {
-            try {
-                if (msg.contains("youtube.com")) {
-                    int startToken = msg.indexOf("youtube.com") + 20;
-                    int endToken = msg.indexOf("v=") + 13;
-                    String ytId = msg.substring(startToken, endToken);
-                    getYoutubeTitle(ytId);
-                } else if (msg.contains("youtu.be")) {
-                    int startToken = msg.indexOf("youtu.be") + 9;
-                    int endToken = msg.lastIndexOf("/") + 12;
-                    String ytId = msg.substring(startToken, endToken);
-                    getYoutubeTitle(ytId);
-                } else {
-                    return;
-                }
-                return;
-            } catch (Exception e) {
-                LOGGER.severe(e.toString());
+        try {
+            if (msg.contains("youtube.com")) {
+                int startToken = msg.indexOf("youtube.com") + 20;
+                int endToken = msg.indexOf("v=") + 13;
+                String ytId = msg.substring(startToken, endToken);
+                getYoutubeTitle(ytId);
+            } else if (msg.contains("youtu.be")) {
+                int startToken = msg.indexOf("youtu.be") + 9;
+                int endToken = msg.lastIndexOf("/") + 12;
+                String ytId = msg.substring(startToken, endToken);
+                getYoutubeTitle(ytId);
+            } else {
                 return;
             }
+            return;
+        } catch (Exception e) {
+            LOGGER.severe(e.toString());
+            return;
         }
     }
 

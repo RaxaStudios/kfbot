@@ -1,24 +1,37 @@
 package com.twitchbotx.bot.handlers;
 
+import com.twitchbotx.bot.ConfigParameters;
+import com.twitchbotx.bot.Datastore;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
-/**
- * Created by Boris on 5/22/2017.
- */
-public class FilterHandler {
+import java.util.logging.Logger;
 
-    /*
-** Methods to add and remove moderator filters
-**
- */
-    public void filterAll(String msg, String user) {
+public final class FilterHandler {
+
+    private static final Logger LOGGER = Logger.getLogger(FilterHandler.class.getSimpleName());
+
+    private final Datastore store;
+
+    public FilterHandler(final Datastore store) {
+        this.store = store;
+    }
+
+    /**
+     * Methods to add and remove moderator filters
+     *
+     * @param msg
+     * @param user
+     *
+     * @return
+     * The message to be sent back to the user in a whisper.
+     */
+    public String getAllFilters(final String msg, final String user) {
         try {
             String[] filters = new String[store.getFilters().size()];
             for (int i = 0; i < store.getFilters().size(); i++) {
-                Node n = this.elements.filterNodes.item(i);
-                Element e = (Element) n;
-                filters[i] = e.getAttribute("name");
+                final ConfigParameters.Filter filter = store.getFilters().get(i);
+                filters[i] = filter.name;
             }
             StringBuilder sb = new StringBuilder();
             for (int j = 0; j < filters.length; j++) {
@@ -27,27 +40,23 @@ public class FilterHandler {
                 }
                 sb.append(filters[j]);
             }
-            sendWhisper(".w " + user + " Current filters: [" + sb.toString() + "]");
-
-            return;
+            return ".w " + user + " Current filters: [" + sb.toString() + "]";
         } catch (IllegalArgumentException e) {
             LOGGER.info(e.toString());
         }
-        sendWhisper(".w " + user + " No filters found.");
+        return ".w " + user + " No filters found.";
     }
 
-    public void filterAdd(String msg, String user) {
+    public String addFilter(String msg, String user) {
         try {
-            String parameters = getInputParameter("!filter-add", msg, true);
+            String parameters = CommonUtility.getInputParameter("!filter-add", msg, true);
             int separator = parameters.indexOf(" ");
             String filter = parameters.substring(0, separator);
             String reason = parameters.substring(separator + 1);
             for (int i = 0; i < store.getFilters().size(); i++) {
-                Node n = this.elements.filterNodes.item(i);
-                Element e = (Element) n;
-                if (filter.contentEquals(e.getAttribute("name"))) {
-                    sendWhisper(".w " + user + " Filter already exists.");
-                    return;
+                final ConfigParameters.Filter configFilter = store.getFilters().get(i);
+                if (filter.equals(configFilter.name)) {
+                    return ".w " + user + " Filter already exists.";
                 }
             }
             Element newNode = this.elements.doc.createElement("filter");
@@ -56,27 +65,29 @@ public class FilterHandler {
             newNode.setAttribute("disable", "false");
             this.elements.filters.appendChild(newNode);
             writeXML();
-            sendWhisper(".w " + user + " Filter added.");
+            return ".w " + user + " Filter added.";
+
         } catch (IllegalArgumentException e) {
             LOGGER.info(e.toString());
         }
+
+        return ".w " + user + " No filters added.";
     }
 
-    public void filterDel(String msg, String user) {
+    public String deleteFilter(String msg, String user) {
         try {
-            String filterName = getInputParameter("!filter-delete", msg, true);
+            String filterName = CommonUtility.getInputParameter("!filter-delete", msg, true);
             for (int i = 0; i < store.getFilters().size(); i++) {
-                Node n = this.elements.filterNodes.item(i);
-                Element e = (Element) n;
-                if (filterName.contentEquals(e.getAttribute("name"))) {
+                final ConfigParameters.Filter configFilter = store.getFilters().get(i);
+                if (filterName.equals(configFilter.name)) {
                     this.elements.filters.removeChild(n);
                     writeXML();
-                    sendWhisper(".w " + user + " Filter deleted.");
-                    return;
+
+                    return ".w " + user + " Filter deleted.";
                 }
             }
 
-            sendWhisper(".w " + user + " Filter not found.");
+            return ".w " + user + " Filter not found.";
         } catch (IllegalArgumentException e) {
             LOGGER.info(e.toString());
         }

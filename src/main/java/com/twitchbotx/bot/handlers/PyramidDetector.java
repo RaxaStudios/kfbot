@@ -1,11 +1,23 @@
 package com.twitchbotx.bot.handlers;
 
+import com.twitchbotx.bot.Datastore;
+
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Logger;
 
 public final class PyramidDetector {
 
+    private static final Logger LOGGER = Logger.getLogger(PyramidDetector.class.getSimpleName());
+
     private final List<CachedMessage> recentMessages = new ArrayList<>();
+
+    private final Datastore store;
+
+    public PyramidDetector(final Datastore store) {
+        this.store = store;
+    }
 
     /**
      * A simple inner class for storing cached messages.
@@ -46,7 +58,7 @@ public final class PyramidDetector {
      *
      * @param msg A message provided by the user
      */
-    public void pyramidDetection(final String user, String msg) {
+    public boolean pyramidDetection(final String user, String msg) {
         recentMessages.add(new CachedMessage(user, msg));
         if (recentMessages.size() > store.getConfiguration().recentMessageCacheSize) {
             recentMessages.remove(0);
@@ -62,7 +74,7 @@ public final class PyramidDetector {
         }
         if (!msg.contentEquals(pattern + " " + pattern + " " + pattern)) {
             System.out.println(msg + " IF MSG DOES NOT TEST");
-            return;
+            return false;
         }
         int patternCount = 3;
         for (int i = recentMessages.size() - 2; i >= 0; i--) {
@@ -71,9 +83,10 @@ public final class PyramidDetector {
                 System.out.println(cm.getMsg() + " CACHED MESSAGE PATTERN 2");
                 patternCount = 2;
             } else if ((patternCount == 2) && (cm.getMsg().contentEquals(pattern)) && (cm.getUser().contentEquals(user))) {
-                sendMessage(store.getConfiguration().pyramidResponse);
-                return;
+                return true;
             }
         }
+
+        return false;
     }
 }
