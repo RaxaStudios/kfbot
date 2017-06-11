@@ -145,6 +145,40 @@ public interface Datastore {
     boolean deleteFilter(final String filterName);
 
     /**
+     * This method updates the cooldown timer.
+     *
+     * @param command
+     * The command name
+     *
+     * @param cooldownUntil
+     * Update the cooldown timer to this value
+     */
+    void updateCooldownTimer(final String command, long cooldownUntil);
+
+    /**
+     * This method sets a particular attribute and value for an existing command.
+     *
+     * @param command
+     * The command name to edit
+     *
+     * @param attribute
+     * The attribute to be set to
+     *
+     * @param value
+     * The value to be set to
+     *
+     * @param allowReservedCmds
+     * Whether we allow reserved commands
+     *
+     * @return
+     * Whether the command was edited
+     */
+    boolean setUserCommandAttribute(final String command,
+                                    final String attribute,
+                                    final String value,
+                                    final boolean allowReservedCmds);
+
+    /**
      * This method will commit all changes to the database.
      */
     void commit();

@@ -99,17 +99,19 @@ public final class CommandOptionHandler {
                             return "";
                         }
                         cdTime = new Date(now.getTime() + command.cooldownInSec * 1000L);
-                        e.setAttribute("cdUntil", Long.toString(cdTime.getTime()));
+                        store.updateCooldownTimer(command.name, cdTime.getTime());
                     }
-                    return sendTxt;
                     if (!command.sound.isEmpty()) {
                         playSound(command.sound);
                     }
+                    return sendTxt;
                 }
             } catch (DOMException | NumberFormatException e) {
                 LOGGER.severe(e.toString());
             }
         }
+
+        return "";
     }
 
     /**
@@ -215,7 +217,7 @@ public final class CommandOptionHandler {
                     return "Failed: only the channel owner can edit the auth for reserved commands.";
                 }
             }
-            if (setUserCmdXMLParam(cmd, "auth", auth, true)) {
+            if (store.setUserCommandAttribute(cmd, "auth", auth, true)) {
                 return "Command [" + cmd + "] authorization set to [" + auth + "]";
             }
         } catch (IllegalArgumentException e) {
@@ -239,7 +241,7 @@ public final class CommandOptionHandler {
             if (soundFile.contentEquals("null")) {
                 soundFile = "";
             }
-            if (setUserCmdXMLParam(cmd, "sound", soundFile, false)) {
+            if (store.setUserCommandAttribute(cmd, "sound", soundFile, false)) {
                 return "Command [" + cmd + "] set to play sound file [" + soundFile + "]";
             }
         } catch (IllegalArgumentException e) {
@@ -258,23 +260,27 @@ public final class CommandOptionHandler {
     public String commandDisable(final String msg) {
         try {
             String cmd = CommonUtility.getInputParameter("!command-disable", msg, true);
-            if (setUserCmdXMLParam(cmd, "disabled", "true", false)) {
+            if (store.setUserCommandAttribute(cmd, "disabled", "true", false)) {
                 return "Command " + cmd + " disabled.";
             }
         } catch (IllegalArgumentException e) {
-            return "Syntax: !command-disable [!command]";
+            return "Unknown error occurred trying to disable command";
         }
+
+        return "Syntax: !command-disable [!command]";
     }
 
     public String commandEnable(String msg) {
         try {
             String cmd = CommonUtility.getInputParameter("!command-enable", msg, true);
-            if (setUserCmdXMLParam(cmd, "disabled", "false", false)) {
+            if (store.setUserCommandAttribute(cmd, "disabled", "false", false)) {
                 return "Command " + cmd + " enabled.";
             }
         } catch (IllegalArgumentException e) {
-            return "Syntax: !command-enable [!command]";
+            return "Unknown error occurred trying to enable command";
         }
+
+        return "Syntax: !command-enable [!command]";
     }
 
     public boolean checkAuthorization(String userCommand, String username, boolean mod, boolean sub) {

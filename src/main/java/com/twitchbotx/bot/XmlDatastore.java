@@ -312,6 +312,17 @@ public final class XmlDatastore implements Datastore {
     }
 
     @Override
+    public void updateCooldownTimer(final String command, long cooldownUntil) {
+        for (int i = 0; i < this.elements.commandNodes.getLength(); i++) {
+            Node n = this.elements.commandNodes.item(i);
+            Element el = (Element) n;
+            if(command.equals(el.getAttribute("name"))) {
+                el.setAttribute("cdUntil", Long.toString(cooldownUntil));
+            }
+        }
+    }
+
+    @Override
     public void commit() {
         try {
             File configFile = new File("kfbot.xml");
@@ -325,24 +336,25 @@ public final class XmlDatastore implements Datastore {
         }
     }
 
-
-    private boolean setUserCommandAttribute(
-            String cmd, String attrib, String value, boolean allowReservedCmds) {
-
-        if (!allowReservedCmds && Commands.getInstance().isReservedCommand(cmd)) {
-            sendMessage("Failed: " + cmd + " is a reserved command.");
+    @Override
+    public boolean setUserCommandAttribute(final String command,
+                                           final String attribute,
+                                           final String value,
+                                           final boolean allowReservedCmds) {
+        if (!allowReservedCmds && Commands.getInstance().isReservedCommand(command)) {
             return false;
         }
 
-        for (int i = 0; i < store.getCommands().size(); i++) {
-            final ConfigParameters.Command command = store.getCommands().get(i);
-            if (cmd.contentEquals(command.name)) {
-                el.setAttribute(attrib, value);
+        for (int i = 0; i < this.elements.commandNodes.getLength(); i++) {
+            Node n = this.elements.commandNodes.item(i);
+            Element el = (Element) n;
+            if (command.contentEquals(el.getAttribute("name"))) {
+                el.setAttribute(attribute, value);
                 commit();
                 return true;
             }
         }
-        sendMessage("Command " + cmd + " not found.");
+
         return false;
     }
 }
