@@ -17,9 +17,7 @@ public final class TwitchMessenger {
     }
 
     /**
-     * This method will send a whisper out to a particular user.
-     *
-     * @TODO I believe this method is currently incomplete, missing user to be sent to.
+     * This method will send a whisper out to a particular user. The user should be include as part of the message.
      *
      * @param msg The message to be sent out to the channel.
      */

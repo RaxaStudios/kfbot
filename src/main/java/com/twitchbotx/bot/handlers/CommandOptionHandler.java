@@ -23,6 +23,7 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
+import com.twitchbotx.bot.Commands;
 import com.twitchbotx.bot.ConfigParameters;
 import com.twitchbotx.bot.Datastore;
 import com.twitchbotx.bot.TwitchBotX;
@@ -50,33 +51,6 @@ public final class CommandOptionHandler {
     private static final Logger LOGGER = Logger.getLogger(TwitchBotX.class.getSimpleName());
 
     private final Datastore store;
-
-    private String[] reservedCommands = {
-        "!uptime",
-        "!followage",
-        "!command-add",
-        "!command-delete",
-        "!command-edit",
-        "!command-auth",
-        "!command-repeat",
-        "!command-delay",
-        "!command-interval",
-        "!command-cooldown",
-        "!command-sound",
-        "!set-msgCache",
-        "!set-pyramidResponse",
-        "!command-enable",
-        "!command-disable",
-        "!commands",
-        "!cnt-add",
-        "!cnt-delete",
-        "!cnt-set",
-        "!cnt-current",
-        "!count",
-        "!filter-all",
-        "!filter-add",
-        "!filter-delete"
-    };
 
     /**
      * This is a simple constructor for the command handler.
@@ -146,41 +120,31 @@ public final class CommandOptionHandler {
     public String addCommand(final String msg) {
         try {
             final String parameters = CommonUtility.getInputParameter("!command-add", msg, true);
-            int separator = parameters.indexOf(" ");
-            String cmd = parameters.substring(0, separator);
-            String txt = parameters.substring(separator + 1);
-            if (isReservedCommand(cmd)) {
+            final int separator = parameters.indexOf(" ");
+            final String cmd = parameters.substring(0, separator);
+            final String txt = parameters.substring(separator + 1);
+
+            if (Commands.getInstance().isReservedCommand(cmd)) {
                 return "Failed: [" + cmd + "] is a reserved command.";
             }
-            for (int i = 0; i < store.getCommands().size(); i++) {
-                final ConfigParameters.Command command = store.getCommands().get(i);
-                if (cmd.equals(command.name) {
-                    return "Command [" + cmd + "] already exists."
-                }
-            }
+
             if (!cmd.startsWith("!")) {
                 return "Commands should start with an !";
             }
 
-            Element newNode = this.elements.doc.createElement("command");
-            newNode.appendChild(this.elements.doc.createTextNode(txt));
-            newNode.setAttribute("name", cmd.toLowerCase());
-            newNode.setAttribute("auth", "");
-            newNode.setAttribute("repeating", "false");
-            newNode.setAttribute("initialDelay", "0");
-            newNode.setAttribute("interval", "0");
-            newNode.setAttribute("cooldown", "0");
-            newNode.setAttribute("cdUntil", "");
-            newNode.setAttribute("sound", "");
-            newNode.setAttribute("disabled", "false");
-            this.elements.commands.appendChild(newNode);
-            writeXML();
+            final boolean added = store.addCommand(cmd, txt);
+            if(added) {
+                return "Added command [" + cmd + "] : [" + txt + "]";
+            }
 
-            String confirmation = "Added command [" + cmd + "] : [" + txt + "]";
-            return confirmation;
+            else {
+                return "Command [" + cmd + "] already exists!";
+            }
+
         } catch (IllegalArgumentException e) {
-            return "Syntax: !command-add [!command] [text].";
+            LOGGER.warning("Unable to add command");
         }
+        return "Syntax: !command-add [!command] [text].";
     }
 
     /**
@@ -190,17 +154,15 @@ public final class CommandOptionHandler {
      */
     public String deleteCommand(final String msg) {
         final String cmd = CommonUtility.getInputParameter("!command-delete", msg, true);
-        if (isReservedCommand(cmd)) {
+        if (Commands.getInstance().isReservedCommand(cmd)) {
             return "Failed: [" + cmd + "] is a reserved command.";
         }
-        for (int i = 0; i < store.getCommands().size(); i++) {
-            final ConfigParameters.Command command = store.getCommands().get(i);
-            if (cmd.contentEquals(command.name)) {
-                this.elements.commands.removeChild(n);
-                writeXML();
-                return "Command [" + cmd + "] deleted.";
-            }
+
+        boolean deleted = store.deleteCommand(cmd);
+        if(deleted) {
+            return "Command [" + cmd + "] deleted.";
         }
+
         return "Command [" + cmd + "] not found.";
     }
 
@@ -218,17 +180,15 @@ public final class CommandOptionHandler {
             if (txt.isEmpty()) {
                 throw new IllegalArgumentException();
             }
-            if (isReservedCommand(cmd)) {
+            if (Commands.getInstance().isReservedCommand(cmd)) {
                 return "Failed: [" + cmd + "] is a reserved command.";
             }
-            for (int i = 0; i < store.getCommands().size(); i++) {
-                final ConfigParameters.Command command = store.getCommands().get(i);
-                if (cmd.contentEquals(command.name)) {
-                    e.setTextContent(txt);
-                    writeXML();
-                    return "Command [" + cmd + "] changed to " + txt;
-                }
+
+            final boolean edited = store.editCommand(cmd, txt);
+            if(edited) {
+                return "Command [" + cmd + "] changed to " + txt;
             }
+
             return "Command [" + cmd + "] not found.";
         } catch (IllegalArgumentException e) {
             return "Syntax: !command-edit [!command] [text].";
@@ -250,7 +210,7 @@ public final class CommandOptionHandler {
             int separator = parameters.indexOf(" ");
             String cmd = parameters.substring(0, separator);
             String auth = parameters.substring(separator + 1) + " ";
-            if (isReservedCommand(cmd)) {
+            if (Commands.getInstance().isReservedCommand(cmd)) {
                 if (!username.contentEquals(store.getConfiguration().joinedChannel)) {
                     return "Failed: only the channel owner can edit the auth for reserved commands.";
                 }
@@ -263,95 +223,6 @@ public final class CommandOptionHandler {
         }
 
         return "Syntax: !command-auth [!command] [auth list].";
-    }
-
-    /**
-     * Sets status of whether or not a command should automatically run. Keep
-     * separate from commandInterval to allow for on/off repeat function while
-     * keeping interval info.
-     *
-     * @param msg The message from the user
-     */
-    public String repeatCommand(String msg) {
-        try {
-            final String parameters = CommonUtility.getInputParameter("!command-repeat", msg, true);
-            int separator = parameters.indexOf(" ");
-            String cmd = parameters.substring(0, separator);
-            String repeat = parameters.substring(separator + 1);
-            if ((!repeat.contentEquals("true")) && (!repeat.contentEquals("false"))) {
-                throw new IllegalArgumentException();
-            }
-            if (setUserCmdXMLParam(cmd, "repeating", repeat, false)) {
-
-                /*
-                ** TODO: Send changes to XML, need to add catch to start timer with TimerManagement class
-                 */
-                return "Command [" + cmd + "] repeating set to [" + repeat + "]";
-            }
-        } catch (IllegalArgumentException e) {
-            return "Syntax: !command-repeat [!command] [true|false].";
-        }
-
-        return "Syntax: !command-repeat [!command] [true|false].";
-    }
-
-    /**
-     * Adds delay to commands, helps to offset autocommands Useful for
-     * autocommands so they don't show up all at once.
-     *
-     * @param msg The message from the user
-     */
-    public String commandDelay(String msg) {
-        try {
-            final String parameters = CommonUtility.getInputParameter("!command-delay", msg, true);
-            int separator = parameters.indexOf(" ");
-            String cmd = parameters.substring(0, separator);
-            long delay = Long.parseLong(parameters.substring(separator + 1));
-            if (setUserCmdXMLParam(cmd, "delay", Long.toString(delay), false)) {
-                return "Command [" + cmd + "] set to initial delay of [" + delay + "] seconds.";
-            }
-        } catch (IllegalArgumentException e) {
-            return "Syntax: !command-delay [!command] [seconds]";
-        }
-    }
-
-    /**
-     * Sets repeat timer to specified command.
-     *
-     * @param msg The message from the user
-     */
-    public String commandInterval(String msg) {
-        try {
-            final String parameters = CommonUtility.getInputParameter("!command-interval", msg, true);
-            int separator = parameters.indexOf(" ");
-            String cmd = parameters.substring(0, separator);
-            long interval = Long.parseLong(parameters.substring(separator + 1));
-            if (setUserCmdXMLParam(cmd, "interval", Long.toString(interval), false)) {
-                return "Command [" + cmd + "] set to repeating interval of [" + interval + "] seconds.";
-            }
-        } catch (IllegalArgumentException e) {
-            return "Syntax: !command-interval [!command] [seconds]";
-        }
-    }
-
-    /**
-     * Appends cooldown to specified command.
-     *
-     * @param msg The message from the user
-     */
-    public String commandCooldown(String msg) {
-        try {
-            final String parameters = CommonUtility.getInputParameter("!command-cooldown", msg, true);
-            int separator = parameters.indexOf(" ");
-            String cmd = parameters.substring(0, separator);
-            long cooldown = Long.parseLong(parameters.substring(separator + 1));
-            if (setUserCmdXMLParam(cmd, "cooldown", Long.toString(cooldown), false)) {
-                return "Command [" + cmd + "] set to cooldown of [" + cooldown + "] seconds.";
-            }
-            setUserCmdXMLParam(cmd, "cdUntil", "", false);
-        } catch (IllegalArgumentException e) {
-            return "Syntax: !command-cooldown [!command] [seconds]";
-        }
     }
 
     /**
@@ -369,11 +240,13 @@ public final class CommandOptionHandler {
                 soundFile = "";
             }
             if (setUserCmdXMLParam(cmd, "sound", soundFile, false)) {
-                return("Command [" + cmd + "] set to play sound file [" + soundFile + "]";
+                return "Command [" + cmd + "] set to play sound file [" + soundFile + "]";
             }
         } catch (IllegalArgumentException e) {
-            return "Syntax: !command-sound [!command] [filename.wav]";
+            LOGGER.warning("Error detected in command sound");
         }
+
+        return "Syntax: !command-sound [!command] [filename.wav]";
     }
 
     /**
@@ -401,93 +274,6 @@ public final class CommandOptionHandler {
             }
         } catch (IllegalArgumentException e) {
             return "Syntax: !command-enable [!command]";
-        }
-    }
-
-    public String setMessageCacheSize(String msg) {
-        try {
-            String value = CommonUtility.getInputParameter("!set-msgCache", msg, true);
-
-            int c = Integer.parseInt(value);
-            if ((c < 2) || (c > 100)) {
-                throw new IllegalArgumentException();
-            }
-            setConfigXML("recentMessageCacheSize", value);
-            return "Cache size set to [" + value + "] messages for pyramid detection.");
-        } catch (IllegalArgumentException e) {
-            return "Syntax: !set-msgcache [2-100]";
-        }
-    }
-
-    public String setPyramidResponse(String msg) {
-        try {
-            String value = CommonUtility.getInputParameter("!set-pyramidResponse", msg, false);
-            setConfigXML("pyramidResponse", value);
-
-            return "Pyramid response set to [" + value + "]";
-        } catch (IllegalArgumentException e) {
-            return "Syntax: !set-pyramidResponse [msg]";
-        }
-    }
-
-    /*
-    ** !commands shows all commands available to user ie mod, sub, username
-    ** @param username, mod status, sub status
-    ** @return none
-     */
-    public String commands(String user, boolean mod, boolean sub) {
-        String auth = "";
-        if (user.contentEquals(store.getConfiguration().joinedChannel)) {
-            return "Command list too long for chat, see commands text file in main bot folder.";
-            writeCommandFile();
-        }
-        /*for (int i = 0; i < this.elements.commandNodes.getLength(); i++) {
-            Node n = this.elements.commandNodes.item(i);
-            Element cmdXmlNode = (Element) n;
-            auth = cmdXmlNode.getAttribute("auth");
-
-        }
-        try {
-            String[] commands = new String[elements.commandNodes.getLength()];
-            for (int i = 0; i < this.elements.commandNodes.getLength(); i++) {
-                Node n = this.elements.commandNodes.item(i);
-                Element e = (Element) n;
-                if (checkAuthorization(e.getAttribute("name"), user, mod, sub)) {
-                    if (!e.getAttribute("auth").contains("-o ")) {
-                        commands[i] = e.getAttribute("name");
-                    }
-                }
-            }
-            StringBuilder sb = new StringBuilder();
-            for (int j = 0; j < commands.length; j++) {
-                if (commands[j] != null) {
-                    if (j > 0) {
-                        sb.append(", ");
-                    }
-                    sb.append(commands[j]);
-                }
-            }
-            sendMessage("@" + user + ", commands available to you: " + sb.toString());
-        } catch (IllegalArgumentException e) {
-            sendMessage("No commands found.");
-        }*/
-    }
-
-    public void writeCommandFile() {
-        try {
-            String[] commands = new String[store.getCommands().size()];
-            for (int i = 0; i < store.getCommands().size(); i++) {
-                final ConfigParameters.Command command = store.getCommands().get(i);
-                commands[i] = command.name;
-            }
-            FileWriter fw = new FileWriter("commands.txt");
-            for (int j = 0; j < commands.length; j++) {
-                fw.write(commands[j] + "\n");
-                LOGGER.info(commands[j]);
-            }
-            fw.close();
-        } catch (IOException e) {
-            LOGGER.info(e.toString());
         }
     }
 
@@ -551,63 +337,5 @@ public final class CommandOptionHandler {
         } catch (Exception e) {
             LOGGER.severe(e.toString());
         }
-    }
-
-    /**
-     * This method checks whether a command has already been reserved.
-     *
-     * @param command The command to check for.
-     *
-     * @return True - the command has been reserved and we shouldn't override it
-     * False - the command has not been reserved and we can override it
-     */
-    private boolean isReservedCommand(final String command) {
-        for (String reservedCommand : reservedCommands) {
-            if (command.contentEquals(reservedCommand)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /**
-     * This method writes to a XML file the entire document.
-     */
-    private void writeXML() {
-        try {
-            File configFile = new File("kfbot.xml");
-            TransformerFactory tFactory = TransformerFactory.newInstance();
-            Transformer transformer = tFactory.newTransformer();
-            DOMSource source = new DOMSource(this.elements.doc);
-            StreamResult result = new StreamResult(configFile);
-            transformer.transform(source, result);
-        } catch (TransformerException e) {
-            LOGGER.severe(e.toString());
-        }
-    }
-
-    private void setConfigXML(String node, String value) {
-        Node n = this.elements.configNode.getElementsByTagName(node).item(0);
-        Element el = (Element) n;
-        el.setTextContent(value);
-        writeXML();
-    }
-
-    private boolean setUserCmdXMLParam(
-            String cmd, String attrib, String value, boolean allowReservedCmds) {
-        if (!allowReservedCmds && isReservedCommand(cmd)) {
-            sendMessage("Failed: " + cmd + " is a reserved command.");
-            return false;
-        }
-        for (int i = 0; i < store.getCommands().size(); i++) {
-            final ConfigParameters.Command command = store.getCommands().get(i);
-            if (cmd.contentEquals(command.name)) {
-                el.setAttribute(attrib, value);
-                writeXML();
-                return true;
-            }
-        }
-        sendMessage("Command " + cmd + " not found.");
-        return false;
     }
 }

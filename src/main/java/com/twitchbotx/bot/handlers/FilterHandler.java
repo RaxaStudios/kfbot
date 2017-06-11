@@ -18,13 +18,16 @@ public final class FilterHandler {
     }
 
     /**
-     * Methods to add and remove moderator filters
+     * This method returns a list of known filters back to the user.
      *
      * @param msg
+     * The original message from the user.
+     *
      * @param user
+     * The username to reply to
      *
      * @return
-     * The message to be sent back to the user in a whisper.
+     * A message for what to reply to the user
      */
     public String getAllFilters(final String msg, final String user) {
         try {
@@ -47,49 +50,66 @@ public final class FilterHandler {
         return ".w " + user + " No filters found.";
     }
 
+    /**
+     * This method attempts to add a filter for the user and returns a message back to the user on the add filter status.
+     *
+     * @param msg
+     * The original message from the user.
+     *
+     * @param user
+     * The username to reply to
+     *
+     * @return
+     * A message for what to reply to the user
+     */
     public String addFilter(String msg, String user) {
         try {
-            String parameters = CommonUtility.getInputParameter("!filter-add", msg, true);
-            int separator = parameters.indexOf(" ");
-            String filter = parameters.substring(0, separator);
-            String reason = parameters.substring(separator + 1);
-            for (int i = 0; i < store.getFilters().size(); i++) {
-                final ConfigParameters.Filter configFilter = store.getFilters().get(i);
-                if (filter.equals(configFilter.name)) {
-                    return ".w " + user + " Filter already exists.";
-                }
+            final String parameters = CommonUtility.getInputParameter("!filter-add", msg, true);
+            final int separator = parameters.indexOf(" ");
+            final String filterName = parameters.substring(0, separator);
+            final String reason = parameters.substring(separator + 1);
+
+            final ConfigParameters.Filter filter = new ConfigParameters.Filter();
+            filter.name = filterName;
+            filter.reason = reason;
+            filter.disabled = false;
+            boolean added = store.addFilter(filter);
+            if(added) {
+                return ".w " + user + " Filter added.";
             }
-            Element newNode = this.elements.doc.createElement("filter");
-            newNode.setAttribute("name", filter);
-            newNode.setAttribute("reason", reason);
-            newNode.setAttribute("disable", "false");
-            this.elements.filters.appendChild(newNode);
-            writeXML();
-            return ".w " + user + " Filter added.";
 
         } catch (IllegalArgumentException e) {
             LOGGER.info(e.toString());
         }
 
-        return ".w " + user + " No filters added.";
+        return ".w " + user + " Filter could not be added.";
     }
 
+    /**
+     * This method attempts to remove a filter for the user and returns a message back to the user on the remove filter status.
+     *
+     * @param msg
+     * The original message from the user.
+     *
+     * @param user
+     * The username to reply to
+     *
+     * @return
+     * A message for what to reply to the user
+     */
     public String deleteFilter(String msg, String user) {
         try {
-            String filterName = CommonUtility.getInputParameter("!filter-delete", msg, true);
-            for (int i = 0; i < store.getFilters().size(); i++) {
-                final ConfigParameters.Filter configFilter = store.getFilters().get(i);
-                if (filterName.equals(configFilter.name)) {
-                    this.elements.filters.removeChild(n);
-                    writeXML();
+            final String filterName = CommonUtility.getInputParameter("!filter-delete", msg, true);
+            final boolean deleted = store.deleteFilter(filterName);
 
-                    return ".w " + user + " Filter deleted.";
-                }
+            if(deleted) {
+                return ".w " + user + " Filter deleted.";
             }
-
             return ".w " + user + " Filter not found.";
         } catch (IllegalArgumentException e) {
             LOGGER.info(e.toString());
         }
+
+        return ".w " + user + " Filter could not be deleted.";
     }
 }

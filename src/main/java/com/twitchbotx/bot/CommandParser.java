@@ -112,11 +112,11 @@ public final class CommandParser {
             return;
         }
 
-        if (trailing.startsWith("!commands")) {
-            if (commandOptionsHandler.checkAuthorization("!commands", username, mod, sub)) {
-                commandOptionsHandler.commands(username, mod, sub);
-            }
-        }
+//        if (trailing.startsWith("!commands")) {
+//            if (commandOptionsHandler.checkAuthorization("!commands", username, mod, sub)) {
+//                commandOptionsHandler.commands(username, mod, sub);
+//            }
+//        }
 
         if (trailing.startsWith("!command-add")) {
             if (commandOptionsHandler.checkAuthorization("!command-add", username, mod, sub)) {
@@ -154,30 +154,6 @@ public final class CommandParser {
             }
             return;
         }
-        if (trailing.startsWith("!command-repeat")) {
-            if (commandOptionsHandler.checkAuthorization("!command-repeat", username, mod, sub)) {
-                commandOptionsHandler.repeatCommand(trailing);
-            }
-            return;
-        }
-        if (trailing.startsWith("!command-delay")) {
-            if (commandOptionsHandler.checkAuthorization("!command-delay", username, mod, sub)) {
-                commandOptionsHandler.commandDelay(trailing);
-            }
-            return;
-        }
-        if (trailing.startsWith("!command-interval")) {
-            if (commandOptionsHandler.checkAuthorization("!command-interval", username, mod, sub)) {
-                commandOptionsHandler.commandInterval(trailing);
-            }
-            return;
-        }
-        if (trailing.startsWith("!command-cooldown")) {
-            if (commandOptionsHandler.checkAuthorization("!command-cooldown", username, mod, sub)) {
-                commandOptionsHandler.commandCooldown(trailing);
-            }
-            return;
-        }
         if (trailing.startsWith("!command-sound")) {
             if (commandOptionsHandler.checkAuthorization("!command-sound", username, mod, sub)) {
                 commandOptionsHandler.commandSound(trailing);
@@ -203,13 +179,13 @@ public final class CommandParser {
 
         if (trailing.startsWith("!set-msgCache")) {
             if (commandOptionsHandler.checkAuthorization("!set-msgCache", username, mod, sub)) {
-                commandOptionsHandler.setMessageCacheSize(trailing);
+                pyramidDetector.setMessageCacheSize(trailing);
             }
             return;
         }
         if (trailing.startsWith("!set-pyramidResponse")) {
             if (commandOptionsHandler.checkAuthorization("!set-pyramidResponse", username, mod, sub)) {
-                commandOptionsHandler.setPyramidResponse(trailing);
+                pyramidDetector.setPyramidResponse(trailing);
             }
             return;
         }

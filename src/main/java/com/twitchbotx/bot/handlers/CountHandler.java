@@ -22,86 +22,69 @@ public final class CountHandler {
     **
     ** return name and value
      */
-    public String addCounter(String msg) {
+    public String addCounter(final String msg) {
         try {
-            String name = CommonUtility.getInputParameter("!cnt-add", msg, true);
-            for (int i = 0; i < store.getCounters().size(); i++) {
-                final ConfigParameters.Counter counter = store.getCounters().get(i);
-                if (name.contentEquals(counter.name)) {
-                    return "Counter [" + name + "] already exists.";
-                }
+            final String name = CommonUtility.getInputParameter("!cnt-add", msg, true);
+            boolean added = store.addCounter(name);
+            if(added) {
+                return "Added counter [" + name + "]";
             }
-            Element newNode = this.elements.doc.createElement("counter");
-            newNode.appendChild(this.elements.doc.createTextNode("0"));
-            newNode.setAttribute("name", name);
-
-            this.elements.counters.appendChild(newNode);
-            writeXML();
-            String confirmation = "Added counter [" + name + "]";
-            return confirmation;
         } catch (IllegalArgumentException e) {
-            return "Syntax: !cnt-add [name]";
+            LOGGER.info(e.toString());
         }
+        return "Syntax: !cnt-add [name]";
     }
 
-    public String updateCount(String msg) {
+    public String updateCount(final String msg) {
         try {
-            String parameters = CommonUtility.getInputParameter("!countadd", msg, true);
-            int separator = parameters.indexOf(" ");
-            String name = parameters.substring(0, separator);
-            int delta = Integer.parseInt(parameters.substring(separator + 1));
+            final String parameters = CommonUtility.getInputParameter("!countadd", msg, true);
+            final int separator = parameters.indexOf(" ");
+            final String name = parameters.substring(0, separator);
+            final int delta = Integer.parseInt(parameters.substring(separator + 1));
 
-            for (int i = 0; i < store.getCounters().size(); i++) {
-                final ConfigParameters.Counter counter = store.getCounters().get(i);
-                if (name.contentEquals(counter.name)) {
-                    int value = counter.count + delta;
-                    e.setTextContent(Integer.toString(value));
-                    writeXML();
-                    return delta + " points added to [" + name + "]";
-                }
+            final boolean updated = store.updateCounter(name, delta);
+            if(updated) {
+                return "Counter [" + name + "] updated to " + delta;
             }
-            return "Counter [" + name + "] not found.";
+
         } catch (IllegalArgumentException e) {
-            return "Syntax: !countadd [name] [value]";
+            LOGGER.info(e.toString());
         }
+
+        return "Syntax: !countadd [name] [value]";
     }
 
-    public String deleteCounter(String msg) {
-        String name = CommonUtility.getInputParameter("!cnt-delete", msg, true);
-        for (int i = 0; i < store.getCounters().size(); i++) {
-            final ConfigParameters.Counter counter = store.getCounters().get(i);
-            if (name.contentEquals(counter.name)) {
-                this.elements.counters.removeChild(n);
-                writeXML();
-                return "Counter [" + name + "] deleted.";
-                return;
-            }
+    public String deleteCounter(final String msg) {
+        final String name = CommonUtility.getInputParameter("!cnt-delete", msg, true);
+        final boolean deleted = store.deleteCounter(name);
+
+        if(deleted) {
+            return "Counter [" + name + "] deleted.";
         }
         return "Counter [" + name + "] not found.";
     }
 
-    public String setCounter(String msg) {
+    public String setCounter(final String msg) {
         try {
-            String parameters = CommonUtility.getInputParameter("!cnt-set", msg, true);
-            int separator = parameters.indexOf(" ");
-            String name = parameters.substring(0, separator);
-            int value = Integer.parseInt(parameters.substring(separator + 1));
-            for (int i = 0; i < store.getCounters().size(); i++) {
-                final ConfigParameters.Counter counter = store.getCounters().get(i);
-                if (name.contentEquals(counter.name)) {
-                    e.setTextContent(Integer.toString(value));
-                    writeXML();
-                    return "Counter [" + name + "] set to [" + Integer.toString(value) + "]";
-                }
+            final String parameters = CommonUtility.getInputParameter("!cnt-set", msg, true);
+            final int separator = parameters.indexOf(" ");
+            final String name = parameters.substring(0, separator);
+            final int value = Integer.parseInt(parameters.substring(separator + 1));
+
+            boolean setted = store.setCounter(name, value);
+            if(setted) {
+                return "Counter [" + name + "] set to [" + Integer.toString(value) + "]";
             }
-            return "Counter [" + name + "] not found.";
+
         } catch (IllegalArgumentException e) {
-            return "Syntax: !cnt-set [name] [value]";
+            LOGGER.info(e.toString());
         }
+
+        return "Syntax: !cnt-set [name] [value]";
     }
 
-    public String getCurrentCount(String msg) {
-        String name = CommonUtility.getInputParameter("!cnt-current", msg, true);
+    public String getCurrentCount(final String msg) {
+        final String name = CommonUtility.getInputParameter("!cnt-current", msg, true);
         for (int i = 0; i < store.getCounters().size(); i++) {
             final ConfigParameters.Counter counter = store.getCounters().get(i);
             if (name.contentEquals(counter.name)) {

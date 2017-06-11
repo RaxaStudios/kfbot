@@ -91,7 +91,6 @@ public final class XmlDatastore implements Datastore {
             command.sound = e.getAttribute("sound");
             commands.add(command);
         }
-
         return commands;
     }
 
@@ -129,17 +128,221 @@ public final class XmlDatastore implements Datastore {
     }
 
     @Override
-    public void updateCommands(final List<String> commands) {
+    public void modifyConfiguration(final String node, final String value) {
+        final Node n = this.elements.configNode.getElementsByTagName(node).item(0);
+        final Element el = (Element) n;
+        el.setTextContent(value);
+        commit();
+    }
 
+
+    @Override
+    public boolean addCommand(final String command, final String text) {
+        for (int i = 0; i < this.elements.commandNodes.getLength(); i++) {
+            final Node n = this.elements.commandNodes.item(i);
+            final Element e = (Element) n;
+            if (command.equals(e.getAttribute("name"))) {
+                return false;
+            }
+        }
+
+        Element newNode = this.elements.doc.createElement("command");
+        newNode.appendChild(this.elements.doc.createTextNode(text));
+        newNode.setAttribute("name", command.toLowerCase());
+        newNode.setAttribute("auth", "");
+        newNode.setAttribute("repeating", "false");
+        newNode.setAttribute("initialDelay", "0");
+        newNode.setAttribute("interval", "0");
+        newNode.setAttribute("cooldown", "0");
+        newNode.setAttribute("cdUntil", "");
+        newNode.setAttribute("sound", "");
+        newNode.setAttribute("disabled", "false");
+        this.elements.commands.appendChild(newNode);
+        commit();
+
+        return true;
     }
 
     @Override
-    public void updateCounters(final List<String> counters) {
+    public boolean editCommand(final String command, final String text) {
+        for(int i = 0; i < this.elements.commandNodes.getLength(); i++) {
+            final Node n = this.elements.commandNodes.item(i);
+            final Element e = (Element) n;
+            if(command.equals(e.getAttribute("name"))) {
+                e.setTextContent(text);
+                commit();
+                return true;
+            }
+        }
 
+        return false;
     }
 
     @Override
-    public void updateFilters(final List<String> filters) {
+    public boolean deleteCommand(final String command) {
+        for(int i = 0; i < this.elements.commandNodes.getLength(); i++) {
+            final Node n = this.elements.commandNodes.item(i);
+            final Element e = (Element) n;
+            if(command.equals(e.getAttribute("name"))) {
+                this.elements.commands.removeChild(n);
+                commit();
+                return true;
+            }
+        }
 
+        return false;
+    }
+
+    @Override
+    public String listCommand() {
+        return "";
+    }
+
+    @Override
+    public boolean updateCounter(final String name, final int delta) {
+        for (int i = 0; i < this.elements.counterNodes.getLength(); i++) {
+            final Node n = this.elements.counterNodes.item(i);
+            final Element e = (Element) n;
+            if (name.equals(e.getAttribute("name"))) {
+                int value = Integer.parseInt(e.getTextContent()) + delta;
+                e.setTextContent(Integer.toString(value));
+                commit();
+
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    @Override
+    public boolean setCounter(final String name, final int value) {
+        for (int i = 0; i < this.elements.counterNodes.getLength(); i++) {
+            final Node n = this.elements.counterNodes.item(i);
+            final Element e = (Element) n;
+            if (name.equals(e.getAttribute("name"))) {
+                e.setTextContent(Integer.toString(value));
+                commit();
+
+                return true;
+            }
+        }
+
+        final Element counterNode = this.elements.doc.createElement("counter");
+        counterNode.appendChild(this.elements.doc.createTextNode(Integer.toString(value)));
+        counterNode.setAttribute("name", name);
+        commit();
+
+        return true;
+    }
+
+    @Override
+    public boolean addCounter(final String name) {
+        for (int i = 0; i < this.elements.counterNodes.getLength(); i++) {
+            final Node n = this.elements.counterNodes.item(i);
+            final Element e = (Element) n;
+            if (name.equals(e.getAttribute("name"))) {
+                return false;
+            }
+        }
+
+        final Element newNode = this.elements.doc.createElement("counter");
+        newNode.appendChild(this.elements.doc.createTextNode("0"));
+        newNode.setAttribute("name", name);
+
+        this.elements.counters.appendChild(newNode);
+        commit();
+
+        return true;
+    }
+
+    @Override
+    public boolean deleteCounter(final String counterName) {
+        for (int i = 0; i < this.elements.counterNodes.getLength(); i++) {
+            final Node n = this.elements.counterNodes.item(i);
+            final Element e = (Element) n;
+            if (counterName.equals(e.getAttribute("name"))) {
+                this.elements.filters.removeChild(n);
+                commit();
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    @Override
+    public boolean addFilter(final ConfigParameters.Filter filter) {
+        for (int i = 0; i < this.elements.filterNodes.getLength(); i++) {
+            final Node n = this.elements.filterNodes.item(i);
+            final Element e = (Element) n;
+            if (filter.name.equals(e.getAttribute("name"))) {
+                return false;
+            }
+        }
+
+        Element newNode = this.elements.doc.createElement("filter");
+        newNode.setAttribute("name", filter.name);
+        newNode.setAttribute("reason", filter.reason);
+        if(filter.disabled) {
+            newNode.setAttribute("disable", "true");
+        } else {
+            newNode.setAttribute("disable", "false");
+        }
+
+        this.elements.filters.appendChild(newNode);
+        commit();
+
+        return true;
+    }
+
+    @Override
+    public boolean deleteFilter(final String filterName) {
+        for (int i = 0; i < this.elements.filterNodes.getLength(); i++) {
+            final Node n = this.elements.filterNodes.item(i);
+            final Element e = (Element) n;
+            if (filterName.contentEquals(e.getAttribute("name"))) {
+                this.elements.filters.removeChild(n);
+                commit();
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    @Override
+    public void commit() {
+        try {
+            File configFile = new File("kfbot.xml");
+            TransformerFactory tFactory = TransformerFactory.newInstance();
+            Transformer transformer = tFactory.newTransformer();
+            DOMSource source = new DOMSource(this.elements.doc);
+            StreamResult result = new StreamResult(configFile);
+            transformer.transform(source, result);
+        } catch (TransformerException e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    private boolean setUserCommandAttribute(
+            String cmd, String attrib, String value, boolean allowReservedCmds) {
+
+        if (!allowReservedCmds && Commands.getInstance().isReservedCommand(cmd)) {
+            sendMessage("Failed: " + cmd + " is a reserved command.");
+            return false;
+        }
+
+        for (int i = 0; i < store.getCommands().size(); i++) {
+            final ConfigParameters.Command command = store.getCommands().get(i);
+            if (cmd.contentEquals(command.name)) {
+                el.setAttribute(attrib, value);
+                commit();
+                return true;
+            }
+        }
+        sendMessage("Command " + cmd + " not found.");
+        return false;
     }
 }

@@ -48,6 +48,33 @@ public final class PyramidDetector {
         }
     }
 
+    public String setMessageCacheSize(String msg) {
+        try {
+            String value = CommonUtility.getInputParameter("!set-msgCache", msg, true);
+
+            int c = Integer.parseInt(value);
+            if ((c < 2) || (c > 100)) {
+                throw new IllegalArgumentException();
+            }
+
+            store.modifyConfiguration("recentMessageCacheSize", value);
+            return "Cache size set to [" + value + "] messages for pyramid detection.";
+        } catch (IllegalArgumentException e) {
+            return "Syntax: !set-msgcache [2-100]";
+        }
+    }
+
+    public String setPyramidResponse(String msg) {
+        try {
+            String value = CommonUtility.getInputParameter("!set-pyramidResponse", msg, false);
+            store.modifyConfiguration("pyramidResponse", value);
+
+            return "Pyramid response set to [" + value + "]";
+        } catch (IllegalArgumentException e) {
+            return "Syntax: !set-pyramidResponse [msg]";
+        }
+    }
+
     /**
      * This method is a quick and dirty solution for pyramid detection.
      *
